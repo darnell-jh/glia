@@ -1,9 +1,9 @@
-package com.dhenry.glia.domain.entities
+package com.dhenry.glia.cassandra.domain.entities
 
 import com.datastax.driver.core.DataType
-import com.dhenry.domain.entities.AggregateEvent
-import com.dhenry.domain.entities.AggregatePrimaryKey
-import com.dhenry.glia.domain.aggregate.AbstractAggregateRoot
+import com.dhenry.glia.cassandra.domain.aggregate.AbstractAggregateRoot
+import com.dhenry.glia.cassandra.domain.models.AggregateEvent
+import com.dhenry.glia.cassandra.domain.models.AggregatePrimaryKey
 import org.springframework.data.cassandra.core.mapping.CassandraType
 import org.springframework.data.cassandra.core.mapping.PrimaryKey
 import org.springframework.data.cassandra.core.mapping.Table

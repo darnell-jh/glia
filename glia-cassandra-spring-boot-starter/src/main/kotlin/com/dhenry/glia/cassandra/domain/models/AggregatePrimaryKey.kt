@@ -1,10 +1,10 @@
-package com.dhenry.domain.entities
+package com.dhenry.glia.cassandra.domain.models
 
 import com.datastax.driver.core.utils.UUIDs
 import org.springframework.data.cassandra.core.cql.PrimaryKeyType
 import org.springframework.data.cassandra.core.mapping.PrimaryKeyClass
 import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn
-import java.util.UUID
+import java.util.*
 
 @PrimaryKeyClass
 data class AggregatePrimaryKey constructor(

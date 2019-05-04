@@ -1,4 +1,4 @@
-package com.dhenry.domain.annotations
+package com.dhenry.glia.annotations
 
 import kotlin.reflect.KClass
 

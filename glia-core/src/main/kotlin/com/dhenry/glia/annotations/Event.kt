@@ -1,4 +1,4 @@
-package com.dhenry.domain.annotations
+package com.dhenry.glia.annotations
 
 @Target(AnnotationTarget.CLASS)
 @MustBeDocumented

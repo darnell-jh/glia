@@ -1,9 +1,8 @@
-package com.dhenry.domain.entities
+package com.dhenry.glia.cassandra.domain.models
 
 import com.datastax.driver.core.utils.UUIDs
-import com.dhenry.glia.domain.models.EventState
 import org.springframework.data.cassandra.core.mapping.UserDefinedType
-import java.util.UUID
+import java.util.*
 
 @UserDefinedType
 data class AggregateEvent (

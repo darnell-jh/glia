@@ -1,4 +1,4 @@
-package com.dhenry.glia.config
+package com.dhenry.glia.cassandra.domain.config
 
 import com.google.common.base.Predicate
 import org.springframework.context.annotation.Bean

@@ -1,4 +1,4 @@
-package com.dhenry.glia.config
+package com.dhenry.glia.cassandra.domain.config
 
 import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.http.HttpStatus

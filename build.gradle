@@ -20,17 +20,17 @@ allprojects {
 }
 
 subprojects {
-    
+
     apply plugin: 'org.jetbrains.kotlin.jvm'
-    
+
     if (name.contains('spring')) {
         apply plugin: 'org.springframework.boot'
         apply plugin: 'org.jetbrains.kotlin.plugin.spring'
         apply plugin: 'io.spring.dependency-management'
     }
-    
+
     group 'com.dhenry.glia'
-    
+
     dependencies {
         // Use the Kotlin JDK 8 standard library.
         implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
@@ -40,13 +40,15 @@ subprojects {
 
         // Use the Kotlin JUnit integration.
         testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
-        
+
         if (name != 'glia-core') {
             implementation project(':glia-core')
         }
-        
+
         if (name.contains('spring')) {
             implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+            testImplementation 'org.springframework.boot:spring-boot-starter-test'
+            testImplementation project(':glia-spring-boot-starter-test')
         }
     }
 
@@ -56,10 +58,39 @@ subprojects {
             jvmTarget = "1.8"
         }
     }
+
     compileTestKotlin {
         kotlinOptions {
             freeCompilerArgs = ["-Xjsr305=strict"]
             jvmTarget = "1.8"
         }
     }
+
+    task runUnitTests(type: Test) {
+        description = 'Runs com.dhenry.glia.unit tests.'
+        group = 'verification'
+
+        filter {
+            includeTestsMatching 'com.dhenry.glia.unit.*'
+        }
+    }
+
+    task runComponentTests(type: Test) {
+        description = 'Runs com.dhenry.glia.component tests.'
+        group = 'verification'
+
+        filter {
+            includeTestsMatching 'com.dhenry.glia.component.*'
+        }
+    }
+
+    task runIntegrationTests(type: Test) {
+        description = 'Runs integration tests.'
+        group = 'verification'
+
+        filter {
+            includeTestsMatching 'com.dhenry.glia.integration.*'
+        }
+    }
+
 }

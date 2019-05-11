@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: testapp
+  data:
+    cassandra:
+      cluster-name: testcluster
+      keyspace-name: ${spring.application.name}

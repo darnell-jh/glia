@@ -6,6 +6,7 @@ local.properties
 // Build files
 build/
 out/
+target/
 
 // Gradle files
 .gradle/

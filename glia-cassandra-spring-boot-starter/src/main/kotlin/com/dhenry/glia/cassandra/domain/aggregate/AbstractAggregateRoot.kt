@@ -1,6 +1,7 @@
 package com.dhenry.glia.cassandra.domain.aggregate
 
 import com.dhenry.glia.cassandra.domain.models.AggregatePrimaryKey
+import org.springframework.context.PayloadApplicationEvent
 import org.springframework.data.annotation.Transient
 import org.springframework.data.domain.AfterDomainEventPublication
 import org.springframework.data.domain.DomainEvents
@@ -18,11 +19,11 @@ open class AbstractAggregateRoot<A: AbstractAggregateRoot<A>>(@Transient val agg
      * @return the event that has been added.
      * @see .andEvent
      */
-    fun <T> registerEvent(event: T): T {
+    protected fun <T> registerEvent(event: T): T {
 
         Assert.notNull(event, "Domain event must not be null!")
 
-        domainEvents.add(event as Any)
+        domainEvents.add(PayloadApplicationEvent(this, event as Any))
         return event
     }
 

@@ -41,6 +41,9 @@ subprojects {
         // Use the Kotlin JUnit integration.
         testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
 
+        // Awaitility
+        testImplementation 'org.awaitility:awaitility-kotlin:3.1.6'
+
         if (name != 'glia-core') {
             implementation project(':glia-core')
         }
@@ -48,6 +51,9 @@ subprojects {
         if (name.contains('spring')) {
             implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
             testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        }
+
+        if (name.contains('spring') && name != 'glia-spring-boot-starter-test') {
             testImplementation project(':glia-spring-boot-starter-test')
         }
     }
@@ -67,29 +73,29 @@ subprojects {
     }
 
     task runUnitTests(type: Test) {
-        description = 'Runs com.dhenry.glia.unit tests.'
+        description = 'Runs Unit Tests.'
         group = 'verification'
 
         filter {
-            includeTestsMatching 'com.dhenry.glia.unit.*'
+            includeTestsMatching '*UnitTest'
         }
     }
 
     task runComponentTests(type: Test) {
-        description = 'Runs com.dhenry.glia.component tests.'
+        description = 'Runs Component Tests.'
         group = 'verification'
 
         filter {
-            includeTestsMatching 'com.dhenry.glia.component.*'
+            includeTestsMatching '*ComponentTest'
         }
     }
 
     task runIntegrationTests(type: Test) {
-        description = 'Runs integration tests.'
+        description = 'Runs Integration Tests.'
         group = 'verification'
 
         filter {
-            includeTestsMatching 'com.dhenry.glia.integration.*'
+            includeTestsMatching '*IntegrationTest'
         }
     }
 

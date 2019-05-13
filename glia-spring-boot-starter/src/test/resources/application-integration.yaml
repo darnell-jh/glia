@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: testapp
+  rabbitmq:
+    username: guest
+    password: guest
+    template:
+      exchange: eventbus
+  data:
+    cassandra:
+      cluster-name: testcluster
+      keyspace-name: ${spring.application.name}
+glia:
+  consumer:
+    package: "com.dhenry.domain.events.consumed"

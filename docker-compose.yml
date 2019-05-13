@@ -7,3 +7,9 @@ services:
       - 9160:9160
     environment:
       - CASSANDRA_CLUSTER_NAME=mycluster
+
+  rabbitmq:
+    image: rabbitmq:3.7-management
+    ports:
+      - 15672:15672
+      - 5672:5672

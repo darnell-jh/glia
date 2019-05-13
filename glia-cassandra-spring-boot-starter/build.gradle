@@ -1,5 +1,5 @@
 version '1.0.0'
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-cassandra'
+    api 'org.springframework.boot:spring-boot-starter-data-cassandra'
 }

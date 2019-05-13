@@ -1,5 +1,11 @@
 version '1.0.0'
 
 dependencies {
-    implementation 'org.springframework.amqp:spring-amqp'
+    compileOnly 'org.springframework.boot:spring-boot-starter-test'
+    compileOnly 'org.springframework.boot:spring-boot-starter-amqp'
+    compileOnly project(':glia-rabbit-spring-boot-starter')
+    compileOnly 'org.junit.jupiter:junit-jupiter-api'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-amqp'
+    testImplementation project(':glia-rabbit-spring-boot-starter')
 }

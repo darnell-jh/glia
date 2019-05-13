@@ -1,58 +1,14 @@
-package com.dhenry.glia.cassandra.domain
+package com.dhenry.glia.component
 
 import com.dhenry.glia.cassandra.domain.entities.DomainEvents
 import com.dhenry.glia.cassandra.domain.models.AggregateEvent
 import com.dhenry.glia.cassandra.domain.models.EventState
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.ListAssert
-import org.junit.Test
 import java.util.stream.Collectors
+import kotlin.test.Test
 
-class DomainEventsServiceTest : BaseComponentTest() {
-
-
-
-//  @Test
-//  fun prependEventShouldStoreEventsInReverseOrderFromWhenTheyWereAdded() {
-//    // Arrange
-//    val aggregateRoot = TestAggregate()
-//    val eventsList = listOf(
-//        AggregateEvent("routingKey", "1", "payloadFirst"),
-//        AggregateEvent("routingKey", "1", "payloadSecond")
-//    )
-//
-//    // Act
-//    eventsList.forEach { domainEventsService.prependEvent(aggregateRoot, it) }
-//
-//    // Assert
-//    val events = cassandraTemplate.query(DomainEvents::class.java).all()
-//        .stream()
-//        .flatMap { it.events.stream() }
-//        .collect(Collectors.toList())
-//    assertThat(events).containsExactly(*eventsList.asReversed().toTypedArray())
-//  }
-//
-//  @Test
-//  fun updateLastEventShouldUpdateLastEvent() {
-//    // Arrange
-//    val aggregateRoot = TestAggregate()
-//    val eventsList = listOf(
-//        AggregateEvent("routingKey", "1", "payloadFirst"),
-//        AggregateEvent("routingKey", "1", "payloadSecond")
-//    )
-//    val lastEvent = AggregateEvent("routingKey", "1", "payloadSecond", state = EventState.SENT)
-//
-//    // Act
-//    eventsList.forEach { domainEventsService.prependEvent(aggregateRoot, it) }
-//    domainEventsService.updateLastEvent(aggregateRoot, lastEvent)
-//
-//    // Assert
-//    val events = cassandraTemplate.query(DomainEvents::class.java).all()
-//        .stream()
-//        .flatMap { it.events.stream() }
-//        .collect(Collectors.toList())
-//    assertThat(events).first().isEqualTo(lastEvent)
-//  }
+class GliaComponentTest : BaseComponentTest() {
 
   @Test
   fun shouldPersistEventToDatabaseOnAggregateUpdateAndSaveToRepository() {

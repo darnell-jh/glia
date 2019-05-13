@@ -1,4 +1,4 @@
-package com.dhenry.glia.cassandra.domain
+package com.dhenry.glia.component
 
 import com.dhenry.glia.Application
 import com.dhenry.glia.annotations.Event
@@ -8,7 +8,7 @@ import com.dhenry.glia.cassandra.domain.aggregate.AbstractAggregateRoot
 import com.dhenry.glia.cassandra.domain.models.AggregateEvent
 import com.dhenry.glia.cassandra.domain.models.AggregatePrimaryKey
 import com.dhenry.glia.cassandra.domain.repositories.DomainEventsRepository
-import com.dhenry.glia.cassandra.domain.services.DomainEventsService
+import com.dhenry.glia.cassandra.domain.services.AbstractDomainEventsService
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -41,7 +41,7 @@ abstract class BaseComponentTest {
     protected lateinit var objectMapper: ObjectMapper
 
     @Autowired
-    protected lateinit var domainEventsService: DomainEventsService
+    protected lateinit var domainEventsService: AbstractDomainEventsService
 
     @Autowired
     protected lateinit var cassandraTemplate: CassandraTemplate
@@ -81,14 +81,14 @@ abstract class BaseComponentTest {
         }
 
         @Bean
-        fun domainEventService(repository: DomainEventsRepository, objectMapper: ObjectMapper): DomainEventsService {
-            return object: DomainEventsService(repository, objectMapper) {
+        fun domainEventService(repository: DomainEventsRepository, objectMapper: ObjectMapper)
+            : AbstractDomainEventsService {
+            return object: AbstractDomainEventsService(repository, objectMapper) {
                 override fun loadEvent(event: AggregateEvent): Any {
                     return objectMapper.readValue(event.payload, TestEvent::class.java)
                 }
 
-                override fun doPublish(routingKey: String, payload: Any, aggregate: AbstractAggregateRoot<*>,
-                                       event: AggregateEvent) {
+                override fun doPublish(routingKey: String, payload: Any, aggregate: AbstractAggregateRoot<*>) {
 
                 }
             }

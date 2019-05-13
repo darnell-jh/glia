@@ -1,4 +1,4 @@
-package com.dhenry.glia.cassandra.domain.config
+package com.dhenry.glia.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module

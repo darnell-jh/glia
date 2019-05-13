@@ -9,7 +9,7 @@
 
 rootProject.name = 'glia'
 include 'glia-core'
+include 'glia-spring-boot-starter-test'
 include 'glia-spring-boot-starter'
 include 'glia-cassandra-spring-boot-starter'
 include 'glia-rabbit-spring-boot-starter'
-include 'glia-spring-boot-starter-test'

@@ -3,3 +3,15 @@ version '1.0.0'
 dependencies {
     api 'org.springframework.boot:spring-boot-starter-amqp'
 }
+
+publishing {
+    publications {
+        gliaRabbit(MavenPublication) {
+            groupId = 'com.dhenry.glia'
+            artifactId = 'glia-rabbit-spring-boot-starter'
+            version = '1.0-SNAPSHOT'
+
+            from components.java
+        }
+    }
+}

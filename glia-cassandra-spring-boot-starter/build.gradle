@@ -3,3 +3,15 @@ version '1.0.0'
 dependencies {
     api 'org.springframework.boot:spring-boot-starter-data-cassandra'
 }
+
+publishing {
+    publications {
+        gliaCassandra(MavenPublication) {
+            groupId = 'com.dhenry.glia'
+            artifactId = 'glia-cassandra-spring-boot-starter'
+            version = '1.0-SNAPSHOT'
+
+            from components.java
+        }
+    }
+}

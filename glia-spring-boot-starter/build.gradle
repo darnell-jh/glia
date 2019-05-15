@@ -8,3 +8,15 @@ dependencies {
     implementation project(':glia-cassandra-spring-boot-starter')
     implementation project(':glia-rabbit-spring-boot-starter')
 }
+
+publishing {
+    publications {
+        gliaStarter(MavenPublication) {
+            groupId = 'com.dhenry.glia'
+            artifactId = 'glia-spring-boot-starter'
+            version = '1.0-SNAPSHOT'
+            
+            from components.java
+        }
+    }
+}

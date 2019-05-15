@@ -9,3 +9,15 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-amqp'
     testImplementation project(':glia-rabbit-spring-boot-starter')
 }
+
+publishing {
+    publications {
+        gliaStarterTest(MavenPublication) {
+            groupId = 'com.dhenry.glia'
+            artifactId = 'glia-spring-boot-starter-test'
+            version = '1.0-SNAPSHOT'
+
+            from components.java
+        }
+    }
+}

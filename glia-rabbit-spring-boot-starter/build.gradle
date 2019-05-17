@@ -9,7 +9,7 @@ publishing {
         gliaRabbit(MavenPublication) {
             groupId = 'com.dhenry.glia'
             artifactId = 'glia-rabbit-spring-boot-starter'
-            version = '1.0-SNAPSHOT'
+            version = '1.0.0'
 
             from components.java
         }

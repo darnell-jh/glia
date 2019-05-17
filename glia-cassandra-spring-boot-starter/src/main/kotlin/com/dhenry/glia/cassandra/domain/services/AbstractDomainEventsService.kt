@@ -135,7 +135,8 @@ abstract class AbstractDomainEventsService(
             .filter { it.findAnnotation<EventSourceHandler>() != null }
         for (handlerFun in eventSourceHandlers) {
             // Find EventSourceHandler functions
-            val annotation: EventSourceHandler = handlerFun.findAnnotation()!!
+            val annotation: EventSourceHandler = handlerFun.findAnnotation()
+                ?: throw NullPointerException("Failed to find event source handler functions")
             if (annotation.value === Any::class &&
                 handlerFun.valueParameters[0].type.javaType === event::class.java) {
                 // Call function with the matching payload
@@ -159,7 +160,8 @@ abstract class AbstractDomainEventsService(
     fun <T: AbstractAggregateRoot<T>> on(payloadApplicationEvent: PayloadApplicationEvent<*>) {
         val source = payloadApplicationEvent.source as T
         val payload = payloadApplicationEvent.payload
-        val eventAnnotation = payload::class.findAnnotation<Event>()!!
+        val eventAnnotation = payload::class.findAnnotation<Event>()
+            ?: throw NullPointerException("Failed to find Event annotation")
         val (aggregate, event) = updateAggregate(source, payload, eventAnnotation)
         publishEvent(payload, eventAnnotation, aggregate, event)
     }

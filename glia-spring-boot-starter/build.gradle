@@ -5,8 +5,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     api 'io.springfox:springfox-swagger2:2.9.2'
     api 'io.springfox:springfox-swagger-ui:2.9.2'
-    implementation project(':glia-cassandra-spring-boot-starter')
-    implementation project(':glia-rabbit-spring-boot-starter')
+    api project(':glia-cassandra-spring-boot-starter')
+    api project(':glia-rabbit-spring-boot-starter')
 }
 
 publishing {
@@ -14,7 +14,7 @@ publishing {
         gliaStarter(MavenPublication) {
             groupId = 'com.dhenry.glia'
             artifactId = 'glia-spring-boot-starter'
-            version = '1.0-SNAPSHOT'
+            version = '1.0.0'
             
             from components.java
         }

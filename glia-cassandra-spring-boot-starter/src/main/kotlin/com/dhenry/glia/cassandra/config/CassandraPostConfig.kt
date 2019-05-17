@@ -10,8 +10,8 @@ import org.springframework.data.cassandra.core.cql.CqlIdentifier
 
 @Configuration
 class CassandraPostConfig(
-    cassandraAdminTemplate: CassandraAdminTemplate,
-    @Value("\${spring.data.cassandra.keyspace-name}") keyspace: String
+    private val cassandraAdminTemplate: CassandraAdminTemplate,
+    @Value("\${spring.data.cassandra.keyspace-name}") private val keyspace: String
 ) {
 
   companion object {
@@ -19,17 +19,21 @@ class CassandraPostConfig(
   }
 
   init {
-    val hasStaticActiveCol = cassandraAdminTemplate.getTableMetadata(keyspace, CqlIdentifier.of(TBL_DOMAIN_EVENTS))
-                .map { it.columns.asSequence() }
-                .orElseGet { emptySequence() }
-                .any { it.name == "active" && it.isStatic }
+    setupStaticActiveColumn()
+  }
 
-        if (!hasStaticActiveCol) {
-            LOGGER.info("Re-adding active column as static boolean")
-            cassandraAdminTemplate.cqlOperations
-                    .execute("""ALTER TABLE $keyspace.$TBL_DOMAIN_EVENTS DROP active""")
-            cassandraAdminTemplate.cqlOperations
-                    .execute("""ALTER TABLE $keyspace.$TBL_DOMAIN_EVENTS ADD active boolean static""")
-        }
+  final fun setupStaticActiveColumn() {
+    val hasStaticActiveCol = cassandraAdminTemplate.getTableMetadata(keyspace, CqlIdentifier.of(TBL_DOMAIN_EVENTS))
+        .map { it.columns.asSequence() }
+        .orElseGet { emptySequence() }
+        .any { it.name == "active" && it.isStatic }
+
+    if (!hasStaticActiveCol) {
+      LOGGER.info("Re-adding active column as static boolean")
+      cassandraAdminTemplate.cqlOperations
+          .execute("""ALTER TABLE $keyspace.$TBL_DOMAIN_EVENTS DROP active""")
+      cassandraAdminTemplate.cqlOperations
+          .execute("""ALTER TABLE $keyspace.$TBL_DOMAIN_EVENTS ADD active boolean static""")
+    }
   }
 }

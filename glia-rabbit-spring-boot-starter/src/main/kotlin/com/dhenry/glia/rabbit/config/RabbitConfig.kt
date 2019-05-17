@@ -20,6 +20,7 @@ import org.springframework.amqp.support.converter.MessageConverter
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider
 import org.springframework.context.annotation.Configuration
@@ -32,9 +33,10 @@ import org.springframework.core.type.filter.AnnotationTypeFilter
 @ConditionalOnClass(ConnectionFactory::class, RabbitTemplate::class)
 class RabbitConfig(
     @Value("\${spring.application.name}") val queueName: String,
-    @Value("\${spring.rabbitmq.template.exchange}") val exchangeName: String,
-    @Value("\${glia.consumer.package}") val consumerPackage: String
+    @Value("\${spring.rabbitmq.template.exchange}") val exchangeName: String
 ) {
+
+    private lateinit var consumerPackage: String
 
     private val classToRoutingKey: Map<Class<*>, String> by lazy {
         hashMapOf(*findEventRoutingKeys(consumerPackage).toTypedArray())
@@ -68,11 +70,16 @@ class RabbitConfig(
         ExchangeBuilder.topicExchange(exchangeName).durable(true).autoDelete().build()
 
     @Bean
+    @ConditionalOnProperty(name = ["glia.consumer.enabled"], havingValue = "true")
     fun queue(): Queue =
         QueueBuilder.durable(queueName).autoDelete().build()
 
     @Bean
-    fun bindings(queue: Queue, exchange: Exchange): Declarables {
+    @ConditionalOnProperty(name = ["glia.consumer.enabled"], havingValue = "true")
+    fun bindings(queue: Queue, exchange: Exchange, @Value("\${glia.consumer.package}") consumerPackage: String)
+        : Declarables {
+        this.consumerPackage = consumerPackage
+
         return classToRoutingKey.values
             .map { BindingBuilder.bind(queue).to(exchange).with(it).noargs() }
             .onEach { LOGGER.info("Binding {} to {} with routing key {}", it.destination, it.exchange, it.routingKey) }
@@ -81,7 +88,10 @@ class RabbitConfig(
 
     @Bean
     @ConditionalOnMissingBean
-    fun messageConverter(objectMapper: ObjectMapper): MessageConverter {
+    fun messageConverter(objectMapper: ObjectMapper,
+                         @Value("\${glia.consumer.package}") consumerPackage: String): MessageConverter {
+        this.consumerPackage = consumerPackage
+
         return Jackson2JsonMessageConverter(objectMapper).also {
             it.setClassMapper(customClassMapper())
         }

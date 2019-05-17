@@ -3,7 +3,7 @@ package com.dhenry.glia.component
 import com.dhenry.glia.Application
 import com.dhenry.glia.annotations.Event
 import com.dhenry.glia.annotations.EventSourceHandler
-import com.dhenry.glia.cassandra.config.CassandraConfig
+import com.dhenry.glia.cassandra.config.CassandraPostConfig
 import com.dhenry.glia.cassandra.domain.aggregate.AbstractAggregateRoot
 import com.dhenry.glia.cassandra.domain.models.AggregateEvent
 import com.dhenry.glia.cassandra.domain.models.AggregatePrimaryKey
@@ -32,7 +32,7 @@ abstract class BaseComponentTest {
     lateinit var cassandraAdminTemplate: CassandraAdminTemplate
 
     @Autowired
-    lateinit var cassandraConfig: CassandraConfig
+    lateinit var cassandraConfig: CassandraPostConfig
 
     @Autowired
     lateinit var cassandraSessionFactoryBean: CassandraSessionFactoryBean
@@ -53,7 +53,7 @@ abstract class BaseComponentTest {
         }
 
         cassandraSessionFactoryBean.afterPropertiesSet()
-        cassandraConfig.postInit()
+        cassandraConfig.setupStaticActiveColumn()
     }
 
     data class TestAggregate(val id: String = "test", var updated: Boolean = false)

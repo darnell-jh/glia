@@ -1,6 +1,8 @@
 package com.dhenry.glia.cassandra.config
 
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean
@@ -18,9 +20,14 @@ class CassandraConfig(
     @Value("\${glia.entity-base-packages:com.dhenry.glia.cassandra.domain}") val entityPackages: Array<String>
 ) : AbstractCassandraConfiguration() {
 
+    companion object {
+        private val LOGGER: Logger = LoggerFactory.getLogger(CassandraConfig::class.java)
+    }
+
     // Below method creates keyspace if it does not exist.
     private val keySpaceSpecification: CreateKeyspaceSpecification
         get() {
+            LOGGER.info("Creating keyspace {}", keyspace)
             return CreateKeyspaceSpecification.createKeyspace(keyspace).ifNotExists()
         }
 
@@ -48,6 +55,7 @@ class CassandraConfig(
     }
 
     override fun getEntityBasePackages(): Array<String> {
+        LOGGER.info("Using entity base packages {}", entityPackages)
         return entityPackages
     }
 

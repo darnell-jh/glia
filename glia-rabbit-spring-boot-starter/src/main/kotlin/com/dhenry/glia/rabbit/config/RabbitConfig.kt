@@ -47,18 +47,22 @@ class RabbitConfig(
     }
 
     companion object {
-        val LOGGER: Logger = LoggerFactory.getLogger(RabbitConfig::class.java)
+        private val LOGGER: Logger = LoggerFactory.getLogger(RabbitConfig::class.java)
 
         fun findEventRoutingKeys(pkgPath: String): Collection<Pair<Class<*>, String>> {
+            LOGGER.debug("Finding routing keys for package {}", pkgPath)
             val classPathScanningCandidateComponentProvider = ClassPathScanningCandidateComponentProvider(true)
             classPathScanningCandidateComponentProvider.addIncludeFilter(AnnotationTypeFilter(Event::class.java))
             val beanDefinitions = classPathScanningCandidateComponentProvider.findCandidateComponents(pkgPath)
+            LOGGER.debug("Found {} bean definitions", beanDefinitions.size)
 
             return beanDefinitions
                 .map {
+                    LOGGER.debug("Mapping bean definition {}", it)
                     it as ScannedGenericBeanDefinition
                     val clazz = Class.forName(it.beanClassName)
                     val annotation = clazz.getAnnotation(Event::class.java)
+                    LOGGER.debug("Returning pair {} -> {}", clazz, annotation.routingKey)
                     Pair<Class<*>, String>(clazz, annotation.routingKey)
                 }
         }
@@ -100,11 +104,16 @@ class RabbitConfig(
     private fun customClassMapper(): ClassMapper {
         return object: ClassMapper{
             override fun toClass(properties: MessageProperties): Class<*> {
-                return routingKeyToClass.getValue(properties.receivedRoutingKey)
+                LOGGER.debug("Got properties {}", properties)
+                val clazz = routingKeyToClass.getValue(properties.receivedRoutingKey)
+                LOGGER.debug("Converting {} to class {}", properties.receivedRoutingKey, clazz.simpleName)
+                return clazz
             }
 
             override fun fromClass(clazz: Class<*>, properties: MessageProperties) {
-                properties.receivedRoutingKey = classToRoutingKey[clazz]
+                val routingKey = classToRoutingKey[clazz]
+                LOGGER.debug("Converting class {} to routingKey {}", clazz.simpleName, routingKey)
+                properties.receivedRoutingKey = routingKey
             }
         }
     }

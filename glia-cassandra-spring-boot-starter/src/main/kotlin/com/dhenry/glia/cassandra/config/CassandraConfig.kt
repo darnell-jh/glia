@@ -1,5 +1,6 @@
 package com.dhenry.glia.cassandra.config
 
+import com.datastax.driver.core.Cluster
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -10,14 +11,17 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.data.cassandra.config.AbstractCassandraConfiguration
 import org.springframework.data.cassandra.config.CassandraCqlClusterFactoryBean
 import org.springframework.data.cassandra.config.SchemaAction
-import org.springframework.data.cassandra.core.CassandraTemplate
 import org.springframework.data.cassandra.core.cql.keyspace.CreateKeyspaceSpecification
+import java.util.*
+import kotlin.collections.ArrayList
+
+private const val DOMAIN_EVENTS_PACKAGE = "com.dhenry.glia.cassandra.domain"
 
 @Configuration
-@ConditionalOnMissingBean(CassandraTemplate::class)
+@ConditionalOnMissingBean(Cluster::class)
 class CassandraConfig(
     @Value("\${spring.data.cassandra.keyspace-name}") val keyspace: String,
-    @Value("\${glia.entity-base-packages:com.dhenry.glia.cassandra.domain}") val entityPackages: Array<String>
+    @Value("\${glia.entity-base-packages:#{null}}") var entityPackages: Array<String>?
 ) : AbstractCassandraConfiguration() {
 
     companion object {
@@ -56,7 +60,9 @@ class CassandraConfig(
 
     override fun getEntityBasePackages(): Array<String> {
         LOGGER.info("Using entity base packages {}", entityPackages)
-        return entityPackages
+        return Optional.ofNullable(entityPackages)
+            .map{ it.plus(DOMAIN_EVENTS_PACKAGE) }
+            .orElse(arrayOf(DOMAIN_EVENTS_PACKAGE))
     }
 
 }

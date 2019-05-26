@@ -74,12 +74,12 @@ class RabbitConfig(
         ExchangeBuilder.topicExchange(exchangeName).durable(true).autoDelete().build()
 
     @Bean
-    @ConditionalOnProperty(name = ["glia.consumer.enabled"], havingValue = "true")
+    @ConditionalOnProperty("glia.consumer.enabled")
     fun queue(): Queue =
         QueueBuilder.durable(queueName).autoDelete().build()
 
     @Bean
-    @ConditionalOnProperty(name = ["glia.consumer.enabled"], havingValue = "true")
+    @ConditionalOnProperty("glia.consumer.enabled")
     fun bindings(queue: Queue, exchange: Exchange, @Value("\${glia.consumer.package}") consumerPackage: String)
         : Declarables {
         this.consumerPackage = consumerPackage

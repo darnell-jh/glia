@@ -5,19 +5,20 @@ import com.dhenry.glia.cassandra.domain.aggregate.AbstractAggregateRoot
 import com.dhenry.glia.cassandra.domain.models.AggregateEvent
 import com.dhenry.glia.cassandra.domain.repositories.DomainEventsRepository
 import com.dhenry.glia.cassandra.domain.services.AbstractDomainEventsService
+import com.dhenry.glia.rabbit.service.RabbitService
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.amqp.core.Message
+import org.springframework.amqp.core.MessagePostProcessor
 import org.springframework.amqp.core.MessageProperties
-import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
 class DomainEventsService(override val domainEventsRepository: DomainEventsRepository,
                           override val objectMapper: ObjectMapper,
-                          val rabbitTemplate: RabbitTemplate)
+                          val rabbitService: RabbitService)
   : AbstractDomainEventsService(domainEventsRepository, objectMapper) {
 
   companion object {
@@ -33,7 +34,7 @@ class DomainEventsService(override val domainEventsRepository: DomainEventsRepos
     LOGGER.debug("Retrieved message properties", messageProps)
     val message = Message(event.payload.toByteArray(), messageProps)
     LOGGER.debug("Converted payload {} to message {}", event.payload, message)
-    val result = rabbitTemplate.messageConverter.fromMessage(message)
+    val result = rabbitService.convertMessage(message)
     LOGGER.debug("Message converted to {}", result)
     return result
   }
@@ -41,9 +42,9 @@ class DomainEventsService(override val domainEventsRepository: DomainEventsRepos
   override fun doPublish(routingKey: String, payload: Any, aggregate: AbstractAggregateRoot<*>) {
     val timestamp = Date(UUIDs.unixTimestamp(aggregate.aggregateId.timeUUID))
     LOGGER.debug("Publishing to routing key {}, using timestamp {}, payload {}", routingKey, timestamp, payload)
-    rabbitTemplate.convertAndSend(routingKey, payload) { message ->
+    rabbitService.send(payload, MessagePostProcessor { message ->
       message.messageProperties.timestamp = timestamp
       message
-    }
+    })
   }
 }

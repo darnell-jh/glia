@@ -19,5 +19,5 @@ annotation class AutoConfigureRabbitProducerListener(
     /**
      * Package where all events produced are found
      */
-    val producerEventsPackage: String = ""
+    val producerEventPackages: Array<String> = []
 )

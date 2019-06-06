@@ -5,3 +5,10 @@ spring:
     cassandra:
       cluster-name: testcluster
       keyspace-name: ${spring.application.name}
+glia:
+  cassandra:
+    replication:
+      strategy: NETWORK_TOPOLOGY_STRATEGY
+      data-centers:
+        DC1: 1
+    recreate-keyspace: true

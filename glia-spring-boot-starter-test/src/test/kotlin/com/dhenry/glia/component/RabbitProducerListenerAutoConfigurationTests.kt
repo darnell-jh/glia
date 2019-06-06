@@ -32,7 +32,7 @@ class RabbitProducerListenerAutoConfigurationTests {
   fun shouldCustomizeProducedEventsPackage() {
     val propertySource = MapPropertySource("test",
         mapOf(
-            "glia.test.rabbit.producer.queues.producer-events-package" to "com.dhenry.glia.component.produced",
+            "glia.test.rabbit.producer.queues.producer-event-packages" to "com.dhenry.glia.component.produced",
             "glia.test.rabbit.producer.queues.enabled" to true
         )
     )

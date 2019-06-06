@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 @ActiveProfiles("integration")
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [Application::class])
-@AutoConfigureRabbitProducerListener(producerEventsPackage = "com.dhenry.glia.integration")
+@AutoConfigureRabbitProducerListener(producerEventPackages = ["com.dhenry.glia.integration"])
 class CassandraRabbitIntegrationTest {
 
   @Event(routingKey = "test.event")

@@ -18,28 +18,35 @@ import org.springframework.amqp.support.converter.ClassMapper
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter
 import org.springframework.amqp.support.converter.MessageConverter
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.beans.factory.config.BeanDefinition
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.ScannedGenericBeanDefinition
 import org.springframework.core.type.filter.AnnotationTypeFilter
 
-
 @Configuration
 @EnableRabbit
+@EnableConfigurationProperties(RabbitConfig.RabbitConfiguration::class)
 @ConditionalOnClass(ConnectionFactory::class, RabbitTemplate::class)
 class RabbitConfig(
     @Value("\${spring.application.name}") val queueName: String,
-    @Value("\${spring.rabbitmq.template.exchange}") val exchangeName: String
+    @Value("\${spring.rabbitmq.template.exchange}") val exchangeName: String,
+    val rabbitProperties: RabbitConfiguration
 ) {
 
-    private lateinit var consumerPackage: String
+    @ConfigurationProperties("glia.rabbit")
+    class RabbitConfiguration(
+        var eventPackages: Array<out String>? = null
+    )
 
     private val classToRoutingKey: Map<Class<*>, String> by lazy {
-        hashMapOf(*findEventRoutingKeys(consumerPackage).toTypedArray())
+        hashMapOf(*findEventRoutingKeys(rabbitProperties.eventPackages ?: arrayOf()).toTypedArray())
     }
 
     private val routingKeyToClass: Map<String, Class<*>> by lazy {
@@ -49,11 +56,14 @@ class RabbitConfig(
     companion object {
         private val LOGGER: Logger = LoggerFactory.getLogger(RabbitConfig::class.java)
 
-        fun findEventRoutingKeys(pkgPath: String): Collection<Pair<Class<*>, String>> {
-            LOGGER.debug("Finding routing keys for package {}", pkgPath)
+        fun findEventRoutingKeys(pkgPaths: Array<out String>): Collection<Pair<Class<*>, String>> {
+            LOGGER.debug("Finding routing keys for packages {}", pkgPaths)
             val classPathScanningCandidateComponentProvider = ClassPathScanningCandidateComponentProvider(true)
             classPathScanningCandidateComponentProvider.addIncludeFilter(AnnotationTypeFilter(Event::class.java))
-            val beanDefinitions = classPathScanningCandidateComponentProvider.findCandidateComponents(pkgPath)
+            val beanDefinitions: Set<BeanDefinition> = pkgPaths.asSequence()
+                .flatMap { classPathScanningCandidateComponentProvider.findCandidateComponents(it).asSequence() }
+                .toSet()
+
             LOGGER.debug("Found {} bean definitions", beanDefinitions.size)
 
             return beanDefinitions
@@ -80,10 +90,8 @@ class RabbitConfig(
 
     @Bean
     @ConditionalOnProperty("glia.consumer.enabled")
-    fun bindings(queue: Queue, exchange: Exchange, @Value("\${glia.consumer.package}") consumerPackage: String)
+    fun bindings(queue: Queue, exchange: Exchange)
         : Declarables {
-        this.consumerPackage = consumerPackage
-
         return classToRoutingKey.values
             .map { BindingBuilder.bind(queue).to(exchange).with(it).noargs() }
             .onEach { LOGGER.info("Binding {} to {} with routing key {}", it.destination, it.exchange, it.routingKey) }
@@ -92,10 +100,7 @@ class RabbitConfig(
 
     @Bean
     @ConditionalOnMissingBean
-    fun messageConverter(objectMapper: ObjectMapper,
-                         @Value("\${glia.consumer.package}") consumerPackage: String): MessageConverter {
-        this.consumerPackage = consumerPackage
-
+    fun messageConverter(objectMapper: ObjectMapper): MessageConverter {
         return Jackson2JsonMessageConverter(objectMapper).also {
             it.setClassMapper(customClassMapper())
         }

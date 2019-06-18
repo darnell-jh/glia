@@ -12,3 +12,6 @@ glia:
       data-centers:
         DC1: 1
     recreate-keyspace: true
+cassandra:
+  contact-points:
+  - localhost

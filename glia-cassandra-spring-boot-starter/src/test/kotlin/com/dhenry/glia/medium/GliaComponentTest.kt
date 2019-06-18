@@ -1,4 +1,4 @@
-package com.dhenry.glia.component
+package com.dhenry.glia.medium
 
 import com.dhenry.glia.cassandra.domain.entities.DomainEvents
 import com.dhenry.glia.cassandra.domain.models.AggregateEvent

@@ -1,4 +1,4 @@
-package com.dhenry.glia.component
+package com.dhenry.glia.medium
 
 import com.dhenry.glia.Application
 import com.dhenry.glia.annotations.Event

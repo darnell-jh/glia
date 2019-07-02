@@ -25,7 +25,7 @@ class DomainEventsService(override val domainEventsRepository: DomainEventsRepos
     private val LOGGER: Logger = LoggerFactory.getLogger(DomainEventsService::class.java)
   }
 
-  override fun loadEvent(event: AggregateEvent): Any {
+  final override fun loadEvent(event: AggregateEvent): Any {
     LOGGER.debug("Loading event {}", event)
     val messageProps = MessageProperties().apply {
       receivedRoutingKey = event.routingKey
@@ -39,8 +39,8 @@ class DomainEventsService(override val domainEventsRepository: DomainEventsRepos
     return result
   }
 
-  override fun doPublish(routingKey: String, payload: Any, aggregate: AbstractAggregateRoot<*>) {
-    val timestamp = Date(UUIDs.unixTimestamp(aggregate.aggregateId.timeUUID))
+  final override fun doPublish(routingKey: String, payload: Any, aggregate: AbstractAggregateRoot<*>) {
+    val timestamp = Date(UUIDs.unixTimestamp(aggregate.aggregatePrimaryKey.timeUUID))
     LOGGER.debug("Publishing to routing key {}, using timestamp {}, payload {}", routingKey, timestamp, payload)
     rabbitService.send(payload, MessagePostProcessor { message ->
       message.messageProperties.timestamp = timestamp

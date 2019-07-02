@@ -14,6 +14,7 @@ import org.springframework.data.cassandra.config.CassandraCqlClusterFactoryBean
 import org.springframework.data.cassandra.config.SchemaAction
 import org.springframework.data.cassandra.core.cql.keyspace.CreateKeyspaceSpecification
 import org.springframework.data.cassandra.core.cql.keyspace.DropKeyspaceSpecification
+import java.util.*
 
 private const val DOMAIN_EVENTS_PACKAGE = "com.dhenry.glia.cassandra.domain"
 
@@ -30,10 +31,14 @@ class CassandraConfig(
     private val LOGGER: Logger = LoggerFactory.getLogger(CassandraConfig::class.java)
   }
 
+  val formattedKeyspace by lazy {
+    keyspace.replace("""[^A-Za-z0-9]""".toRegex(), "").toLowerCase(Locale.US)
+  }
+
   // Below method creates keyspace if it does not exist.
   private val keySpaceSpecification: CreateKeyspaceSpecification by lazy {
-    LOGGER.info("Keyspace {} will be created", keyspace)
-    val spec = CreateKeyspaceSpecification.createKeyspace(keyspace)
+    LOGGER.info("Keyspace {} will be created", formattedKeyspace)
+    val spec = CreateKeyspaceSpecification.createKeyspace(formattedKeyspace)
         .ifNotExists()
     replicationConfig.configureKeyspaceCreation(spec)
     spec
@@ -55,7 +60,7 @@ class CassandraConfig(
   }
 
   override fun getKeyspaceName(): String {
-    return keyspace
+    return formattedKeyspace
   }
 
   override fun getKeyspaceCreations(): List<CreateKeyspaceSpecification> {
@@ -63,8 +68,8 @@ class CassandraConfig(
   }
 
   override fun getKeyspaceDrops(): List<DropKeyspaceSpecification> {
-    LOGGER.info("Keyspace {} will be dropped", keyspace)
-    return listOf(DropKeyspaceSpecification.dropKeyspace(keyspace).ifExists())
+    LOGGER.info("Keyspace {} will be dropped", formattedKeyspace)
+    return listOf(DropKeyspaceSpecification.dropKeyspace(formattedKeyspace).ifExists())
   }
 
   override fun getEntityBasePackages(): Array<String> {
@@ -73,5 +78,4 @@ class CassandraConfig(
     if (replicationConfig.enableDomainEvents) basePackages += DOMAIN_EVENTS_PACKAGE
     return basePackages
   }
-
 }

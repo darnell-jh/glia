@@ -7,6 +7,7 @@ dependencies {
     api 'io.springfox:springfox-swagger-ui:2.9.2'
     api project(':glia-cassandra-spring-boot-starter')
     api project(':glia-rabbit-spring-boot-starter')
+    api project(':glia-core')
 }
 
 publishing {

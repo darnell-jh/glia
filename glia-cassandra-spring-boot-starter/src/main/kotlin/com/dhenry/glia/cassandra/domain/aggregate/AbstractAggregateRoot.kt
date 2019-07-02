@@ -7,10 +7,20 @@ import org.springframework.data.domain.AfterDomainEventPublication
 import org.springframework.data.domain.DomainEvents
 import org.springframework.util.Assert
 
-open class AbstractAggregateRoot<A: AbstractAggregateRoot<A>>(@Transient open val aggregateId: AggregatePrimaryKey) {
+abstract class AbstractAggregateRoot<A: AbstractAggregateRoot<A>>(
+    @Transient open val aggregatePrimaryKey: AggregatePrimaryKey
+) {
 
     @Transient
     private var domainEvents = mutableListOf<Any>()
+
+    @Transient
+    var latestOnly: Boolean = false
+        protected set(enable) { field = enable }
+
+    @Transient
+    var fromOldest: Boolean = false
+        protected set(enable) { field = enable }
 
     /**
      * Registers the given event object for publication on a call to a Spring Data repository's save methods.
@@ -23,6 +33,7 @@ open class AbstractAggregateRoot<A: AbstractAggregateRoot<A>>(@Transient open va
 
         Assert.notNull(event, "Domain event must not be null!")
 
+        // Update time uuid for each event registered
         domainEvents.add(PayloadApplicationEvent(this, event as Any))
         return event
     }
@@ -53,6 +64,8 @@ open class AbstractAggregateRoot<A: AbstractAggregateRoot<A>>(@Transient open va
     fun andEventsFrom(aggregate: AbstractAggregateRoot<*>): A {
 
         Assert.notNull(aggregate, "Aggregate must not be null!")
+        Assert.notNull(aggregate.domainEvents, "Domain events must exist")
+        if (aggregate.domainEvents.isEmpty()) throw IllegalArgumentException("Domain events must not be empty")
 
         domainEvents.addAll(aggregate.domainEvents())
 
@@ -73,4 +86,13 @@ open class AbstractAggregateRoot<A: AbstractAggregateRoot<A>>(@Transient open va
 
         return this as A
     }
+
+    /**
+     * Determines if the aggregate is considered fully populated. Override this when mode is set to LATEST_COMPLETE to
+     * stop populating aggregate once all the required properties are populated.
+     */
+    fun fullyPopulated(): Boolean {
+        return false
+    }
+
 }

@@ -13,4 +13,4 @@ spring:
 glia:
   rabbit:
     event-packages:
-    - "com.dhenry.domain.events.consumed"
+    - "com.dhenry.glia.integration"

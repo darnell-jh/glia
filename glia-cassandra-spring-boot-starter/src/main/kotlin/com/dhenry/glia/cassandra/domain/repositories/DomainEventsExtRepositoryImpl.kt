@@ -10,11 +10,14 @@ import org.springframework.data.cassandra.core.query.Update
 import org.springframework.data.cassandra.core.query.isEqualTo
 import org.springframework.data.cassandra.core.query.where
 import org.springframework.data.cassandra.core.update
+import org.springframework.util.Assert
 
 class DomainEventsExtRepositoryImpl(val cassandraTemplate: CassandraTemplate): DomainEventsExtRepository {
 
   override fun prependEvent(aggregateRoot: AbstractAggregateRoot<*>, event: AggregateEvent) {
-    val (aggregateId, timeUUID) = aggregateRoot.aggregateId
+    Assert.notNull(event, "Event must not be null")
+
+    val (aggregateId, timeUUID) = aggregateRoot.aggregatePrimaryKey
 
     val update = Update.empty().addTo("events").prepend(event)
     (cassandraTemplate as ExecutableUpdateOperation).update(DomainEvents::class)
@@ -26,7 +29,9 @@ class DomainEventsExtRepositoryImpl(val cassandraTemplate: CassandraTemplate): D
   }
 
   override fun updateLastEvent(aggregateRoot: AbstractAggregateRoot<*>, event: AggregateEvent) {
-    val (aggregateId, timeUUID) = aggregateRoot.aggregateId
+    Assert.notNull(event, "Event must not be null")
+
+    val (aggregateId, timeUUID) = aggregateRoot.aggregatePrimaryKey
 
     val update = Update.empty().set("events").atIndex(0).to(event)
     (cassandraTemplate as ExecutableUpdateOperation).update(DomainEvents::class)

@@ -36,7 +36,7 @@ class GliaComponentTest : BaseComponentTest() {
     domainEventsService.save(testAggregate)
 
     // Act
-    val actualAggregate = domainEventsService.loadAggregate(testAggregate.id, { TestAggregate(it) })
+    val actualAggregate = domainEventsService.loadAggregate(testAggregate.id, TestAggregate::class)
 
     // Assert
     assertThat(actualAggregate).isEqualTo(testAggregate)

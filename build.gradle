@@ -56,7 +56,7 @@ subprojects {
         // Awaitility
         testImplementation 'org.awaitility:awaitility-kotlin:3.1.6'
 
-        if (name != 'glia-core') {
+        if (name != 'glia-core' && name != 'glia-spring-boot-starter') {
             implementation project(':glia-core')
         }
 
@@ -111,4 +111,8 @@ subprojects {
         }
     }
 
+}
+
+wrapper {
+    gradleVersion = '5.4.1'
 }

@@ -1,7 +1,8 @@
 package com.dhenry.glia.cassandra.domain.repositories
 
-import com.dhenry.glia.cassandra.domain.aggregate.AbstractAggregateRoot
+import com.dhenry.glia.cassandra.domain.aggregate.BaseAbstractAggregateRoot
 import com.dhenry.glia.cassandra.domain.models.AggregateEvent
+import org.springframework.data.cassandra.core.WriteResult
 
 interface DomainEventsExtRepository {
 
@@ -10,13 +11,13 @@ interface DomainEventsExtRepository {
    * @param aggregateRoot Aggregate root to update
    * @param event Event that will be updated in aggregate
    */
-  fun prependEvent(aggregateRoot: AbstractAggregateRoot<*>, event: AggregateEvent)
+  fun prependEvent(aggregateRoot: BaseAbstractAggregateRoot<*>, event: AggregateEvent): WriteResult
 
   /**
    * Updates last event in aggregate
    * @param aggregateRoot Aggregate root to update
    * @param event Event that will be updated in aggregate
    */
-  fun updateLastEvent(aggregateRoot: AbstractAggregateRoot<*>, event: AggregateEvent)
+  fun updateLastEvent(aggregateRoot: BaseAbstractAggregateRoot<*>, event: AggregateEvent): WriteResult
 
 }

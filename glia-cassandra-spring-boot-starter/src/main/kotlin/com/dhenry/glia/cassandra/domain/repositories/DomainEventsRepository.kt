@@ -19,6 +19,6 @@ interface DomainEventsRepository: CassandraRepository<DomainEvents, AggregatePri
     fun countById(aggregateId: String): Long
 
     @Query("select * from domainevents where aggregateId = ?0 AND timeUUID = ?1")
-    fun findOneById(aggregateId: String, timeUUID: UUID)
+    fun findOneById(aggregateId: String, timeUUID: UUID): DomainEvents
 
 }

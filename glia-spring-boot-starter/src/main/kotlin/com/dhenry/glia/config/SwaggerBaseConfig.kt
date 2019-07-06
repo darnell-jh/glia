@@ -1,7 +1,6 @@
 package com.dhenry.glia.config
 
 import com.google.common.base.Predicate
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.ResponseEntity
@@ -26,11 +25,11 @@ abstract class SwaggerBaseConfig {
 
     }
 
-    open fun paths(): Predicate<String> {
+    fun paths(): Predicate<String> {
         return PathSelectors.ant("/v1/**")
     }
 
-    open fun apiInfo(): ApiInfo {
+    fun apiInfo(): ApiInfo {
         return ApiInfoBuilder()
                 .description("A micro-service. Update description by overriding apiInfo in BaseConfig")
                 .title("Awesome API")

@@ -8,7 +8,13 @@ import com.dhenry.glia.cassandra.domain.entities.DomainEvents
 import com.dhenry.glia.cassandra.domain.models.AggregateEvent
 import com.dhenry.glia.cassandra.domain.models.EventState
 import com.dhenry.glia.cassandra.domain.repositories.DomainEventsRepository
+import com.dhenry.glia.cassandra.exceptions.WriteNotAppliedException
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.aop.framework.ProxyFactoryBean
+import org.springframework.context.ApplicationContext
+import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.PayloadApplicationEvent
 import org.springframework.context.event.EventListener
 import java.util.concurrent.atomic.AtomicInteger
@@ -25,8 +31,13 @@ import kotlin.reflect.jvm.javaType
  */
 abstract class AbstractDomainEventsService(
     protected open val domainEventsRepository: DomainEventsRepository,
-    protected open val objectMapper: ObjectMapper
+    protected open val objectMapper: ObjectMapper,
+    protected open val applicationContext: ApplicationContext
 ) {
+
+  companion object {
+    val LOGGER: Logger = LoggerFactory.getLogger(AbstractDomainEventsService::class.java)
+  }
 
   /**
    * Updates the aggregate with payload
@@ -35,7 +46,7 @@ abstract class AbstractDomainEventsService(
    * @param eventAnnotation Event annotation to capture version and routing key
    * @return A pair of the aggregate that was updated and the event that was emitted as a result of the payload
    */
-  private fun <T : AbstractAggregateRoot<T>> updateAggregate(
+  private fun <T : AbstractAggregateRoot<*>> updateAggregate(
       aggregate: T, payload: Any, eventAnnotation: Event): Pair<AbstractAggregateRoot<*>, AggregateEvent> {
     // Create a copy of the aggregate and insert into the repository
     val payloadJson = objectMapper.writeValueAsString(payload)
@@ -56,6 +67,14 @@ abstract class AbstractDomainEventsService(
     domainEventsRepository.updateLastEvent(aggregate, newEvent)
   }
 
+  private fun save(domainEvents: DomainEvents) {
+    try {
+      domainEventsRepository.save(domainEvents)
+    } catch (ex: WriteNotAppliedException) {
+      LOGGER.error("Write was not applied for aggregate {}", domainEvents.aggregatePrimaryKey.aggregateId);
+    }
+  }
+
   /**
    * Saves the aggregate root to the repository
    * @param aggregateRoot Aggregate root to save
@@ -63,8 +82,9 @@ abstract class AbstractDomainEventsService(
   fun save(aggregateRoot: BaseAbstractAggregateRoot<*>) {
     val domainEvents = DomainEvents(aggregateRoot.aggregatePrimaryKey)
     domainEvents.andEventsFrom(aggregateRoot)
+    domainEvents.setAggregateRoot(aggregateRoot)
 
-    domainEventsRepository.save(domainEvents)
+    save(domainEvents)
   }
 
   /**
@@ -76,7 +96,7 @@ abstract class AbstractDomainEventsService(
     domainEvents.active = false
     domainEvents.andEventsFrom(aggregateRoot)
 
-    domainEventsRepository.save(domainEvents)
+    save(domainEvents)
   }
 
   /**
@@ -88,7 +108,7 @@ abstract class AbstractDomainEventsService(
     domainEvents.active = true
     domainEvents.andEventsFrom(aggregateRoot)
 
-    domainEventsRepository.save(domainEvents)
+    save(domainEvents)
   }
 
   fun <T : AbstractAggregateRoot<T>> createOrLoadAggregate(
@@ -120,7 +140,7 @@ abstract class AbstractDomainEventsService(
       for (domainEvents in it) {
         if (aggregate == null) aggregate = clazz.createInstance()
         aggregate!!.aggregatePrimaryKey.aggregateId = domainEvents.aggregatePrimaryKey.aggregateId
-        aggregate!!.aggregatePrimaryKey.timeUUID = domainEvents.aggregatePrimaryKey.timeUUID
+        aggregate!!.aggregatePrimaryKey.sequence = domainEvents.aggregatePrimaryKey.sequence
 
         if (onlyActive && !domainEvents.active) return@use
         for (event in domainEvents.events) {
@@ -151,7 +171,7 @@ abstract class AbstractDomainEventsService(
    * @param event The event that will be emitted to the event listeners
    * @param domainEvents The DomainEvents entity
    */
-  private fun <T : AbstractAggregateRoot<T>> invokeEventListeners(
+  private fun <T : AbstractAggregateRoot<*>> invokeEventListeners(
       aggregate: T, event: Any, domainEvents: DomainEvents? = null
   ) {
     // Find EventSourceHandler functions
@@ -202,13 +222,13 @@ abstract class AbstractDomainEventsService(
    * @return the domain event
    */
   private fun getDomainEvents(aggregate: AbstractAggregateRoot<*>): DomainEvents {
-    val (aggregateId, timeUUID) = aggregate.aggregatePrimaryKey
-    return domainEventsRepository.findOneById(aggregateId, timeUUID)
+    val (aggregateId, sequence) = aggregate.aggregatePrimaryKey
+    return domainEventsRepository.findOneById(aggregateId, sequence)
   }
 
   /**
    * Checks if flags are valid
-   * @param validFlags Flags to verify against.
+   * @param validFlags Flags to verify against.f
    * @return true if flags are valid
    */
   private fun areFlagsValid(validFlags: AtomicInteger): Boolean {
@@ -245,8 +265,8 @@ abstract class AbstractDomainEventsService(
    */
   @Suppress("UNCHECKED_CAST")
   @EventListener
-  fun <T : AbstractAggregateRoot<T>> on(payloadApplicationEvent: PayloadApplicationEvent<*>) {
-    val source = payloadApplicationEvent.source as T
+  fun on(payloadApplicationEvent: PayloadApplicationEvent<*>) {
+    val source = payloadApplicationEvent.source as AbstractAggregateRoot<*>
     val payload = payloadApplicationEvent.payload
     val eventAnnotation = payload::class.findAnnotation<Event>()
         ?: throw NullPointerException("Failed to find Event annotation")
@@ -261,12 +281,12 @@ abstract class AbstractDomainEventsService(
    * @param aggregate Aggregate that the event is created from
    */
   protected abstract fun doPublish(routingKey: String, payload: Any,
-                                   aggregate: AbstractAggregateRoot<*>)
+                                   aggregate: AbstractAggregateRoot<*>, event:AggregateEvent)
 
   private fun publishEvent(payload: Any, eventAnnotation: Event,
                             aggregate: AbstractAggregateRoot<*>, event: AggregateEvent) {
     try {
-      doPublish(eventAnnotation.routingKey, payload, aggregate)
+      doPublish(eventAnnotation.routingKey, payload, aggregate, event)
       updateEventState(aggregate, event, EventState.SENT)
     } catch (ex: Exception) {
       updateEventState(aggregate, event, EventState.FAIL)

@@ -1,4 +1,4 @@
-package com.dhenry.glia.config
+package com.dhenry.glia.service
 
 import com.datastax.driver.core.utils.UUIDs
 import com.dhenry.glia.cassandra.domain.aggregate.AbstractAggregateRoot
@@ -12,14 +12,17 @@ import org.slf4j.LoggerFactory
 import org.springframework.amqp.core.Message
 import org.springframework.amqp.core.MessagePostProcessor
 import org.springframework.amqp.core.MessageProperties
+import org.springframework.aop.framework.ProxyFactoryBean
+import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
 class DomainEventsService(override val domainEventsRepository: DomainEventsRepository,
                           override val objectMapper: ObjectMapper,
+                          override val applicationContext: ApplicationContext,
                           val rabbitService: RabbitService)
-  : AbstractDomainEventsService(domainEventsRepository, objectMapper) {
+  : AbstractDomainEventsService(domainEventsRepository, objectMapper, applicationContext) {
 
   companion object {
     private val LOGGER: Logger = LoggerFactory.getLogger(DomainEventsService::class.java)
@@ -39,8 +42,9 @@ class DomainEventsService(override val domainEventsRepository: DomainEventsRepos
     return result
   }
 
-  final override fun doPublish(routingKey: String, payload: Any, aggregate: AbstractAggregateRoot<*>) {
-    val timestamp = Date(UUIDs.unixTimestamp(aggregate.aggregatePrimaryKey.timeUUID))
+  final override fun doPublish(routingKey: String, payload: Any, aggregate: AbstractAggregateRoot<*>,
+                               event: AggregateEvent) {
+    val timestamp = Date(UUIDs.unixTimestamp(event.eventId))
     LOGGER.debug("Publishing to routing key {}, using timestamp {}, payload {}", routingKey, timestamp, payload)
     rabbitService.send(payload, MessagePostProcessor { message ->
       message.messageProperties.timestamp = timestamp

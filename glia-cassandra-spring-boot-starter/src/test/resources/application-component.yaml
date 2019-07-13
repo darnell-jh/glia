@@ -11,7 +11,7 @@ glia:
       strategy: NETWORK_TOPOLOGY_STRATEGY
       data-centers:
         DC1: 1
-    recreate-keyspace: true
+    recreate-keyspace: false
 cassandra:
   contact-points:
   - localhost

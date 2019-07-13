@@ -20,13 +20,13 @@ class DomainEventsExtRepositoryImpl(
   override fun prependEvent(aggregateRoot: BaseAbstractAggregateRoot<*>, event: AggregateEvent): WriteResult {
     Assert.notNull(event, "Event must not be null")
 
-    val (aggregateId, timeUUID) = aggregateRoot.aggregatePrimaryKey
+    val (aggregateId, sequence) = aggregateRoot.aggregatePrimaryKey
 
-    val update = Update.empty().addTo("events").prepend(event)
+    val update = Update.empty().addTo(DomainEvents.FIELD_EVENTS).prepend(event)
     return (cassandraTemplate as ExecutableUpdateOperation).update(DomainEvents::class)
         .matching(Query.query(
-            where("aggregateid").isEqualTo(aggregateId),
-            where("timeuuid").isEqualTo(timeUUID)
+            where(DomainEvents.FIELD_AGGREGATE_ID).isEqualTo(aggregateId),
+            where(DomainEvents.FIELD_SEQUENCE).isEqualTo(sequence)
         ))
         .apply(update)
   }
@@ -34,13 +34,13 @@ class DomainEventsExtRepositoryImpl(
   override fun updateLastEvent(aggregateRoot: BaseAbstractAggregateRoot<*>, event: AggregateEvent): WriteResult {
     Assert.notNull(event, "Event must not be null")
 
-    val (aggregateId, timeUUID) = aggregateRoot.aggregatePrimaryKey
+    val (aggregateId, sequence) = aggregateRoot.aggregatePrimaryKey
 
-    val update = Update.empty().set("events").atIndex(0).to(event)
+    val update = Update.empty().set(DomainEvents.FIELD_EVENTS).atIndex(0).to(event)
     return (cassandraTemplate as ExecutableUpdateOperation).update(DomainEvents::class)
         .matching(Query.query(
-            where("aggregateid").isEqualTo(aggregateId),
-            where("timeuuid").isEqualTo(timeUUID)
+            where(DomainEvents.FIELD_AGGREGATE_ID).isEqualTo(aggregateId),
+            where(DomainEvents.FIELD_SEQUENCE).isEqualTo(sequence)
         ))
         .apply(update)
   }

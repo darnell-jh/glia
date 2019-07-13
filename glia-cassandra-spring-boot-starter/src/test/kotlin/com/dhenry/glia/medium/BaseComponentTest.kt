@@ -3,7 +3,6 @@ package com.dhenry.glia.medium
 import com.dhenry.glia.Application
 import com.dhenry.glia.annotations.Event
 import com.dhenry.glia.annotations.EventSourceHandler
-import com.dhenry.glia.cassandra.config.CassandraPostConfig
 import com.dhenry.glia.cassandra.domain.aggregate.AbstractAggregateRoot
 import com.dhenry.glia.cassandra.domain.models.AggregateEvent
 import com.dhenry.glia.cassandra.domain.models.AggregatePrimaryKey
@@ -11,9 +10,12 @@ import com.dhenry.glia.cassandra.domain.repositories.DomainEventsRepository
 import com.dhenry.glia.cassandra.domain.services.AbstractDomainEventsService
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.runner.RunWith
+import org.springframework.aop.framework.ProxyFactoryBean
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.ApplicationContext
+import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.data.cassandra.config.CassandraSessionFactoryBean
 import org.springframework.data.cassandra.core.CassandraAdminTemplate
@@ -30,9 +32,6 @@ abstract class BaseComponentTest {
 
     @Autowired
     lateinit var cassandraAdminTemplate: CassandraAdminTemplate
-
-    @Autowired
-    lateinit var cassandraConfig: CassandraPostConfig
 
     @Autowired
     lateinit var cassandraSessionFactoryBean: CassandraSessionFactoryBean
@@ -53,25 +52,31 @@ abstract class BaseComponentTest {
         }
 
         cassandraSessionFactoryBean.afterPropertiesSet()
-        cassandraConfig.setupStaticActiveColumn()
     }
 
-    data class TestAggregate(val id: String = "test", var updated: Boolean = false)
+    class TestAggregate(val id: String = "test")
         : AbstractAggregateRoot<TestAggregate>(AggregatePrimaryKey(id)) {
 
-        fun update() {
-            registerEvent(TestEvent())
+        var updated: Boolean = false
+            private set
+
+        var property: String? = null
+            private set
+
+        fun update(property: String) {
+            registerEvent(TestEvent(property))
         }
 
         @EventSourceHandler
         fun on(testEvent: TestEvent) {
             updated = true
+            property = testEvent.property
         }
 
     }
 
     @Event("routingKey")
-    data class TestEvent(val data: String = "data")
+    data class TestEvent(val property: String = "")
 
     @TestConfiguration
     class TestConfig {
@@ -81,14 +86,16 @@ abstract class BaseComponentTest {
         }
 
         @Bean
-        fun domainEventService(repository: DomainEventsRepository, objectMapper: ObjectMapper)
+        fun domainEventService(repository: DomainEventsRepository, objectMapper: ObjectMapper,
+                               applicationContext: ApplicationContext)
             : AbstractDomainEventsService {
-            return object: AbstractDomainEventsService(repository, objectMapper) {
+            return object: AbstractDomainEventsService(repository, objectMapper, applicationContext) {
                 override fun loadEvent(event: AggregateEvent): Any {
                     return objectMapper.readValue(event.payload, TestEvent::class.java)
                 }
 
-                override fun doPublish(routingKey: String, payload: Any, aggregate: AbstractAggregateRoot<*>) {
+                override fun doPublish(routingKey: String, payload: Any, aggregate: AbstractAggregateRoot<*>,
+                                       event: AggregateEvent) {
 
                 }
             }

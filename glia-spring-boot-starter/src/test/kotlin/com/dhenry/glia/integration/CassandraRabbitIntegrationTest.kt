@@ -3,11 +3,10 @@ package com.dhenry.glia.integration
 import com.dhenry.glia.Application
 import com.dhenry.glia.annotations.Event
 import com.dhenry.glia.annotations.EventSourceHandler
-import com.dhenry.glia.cassandra.config.CassandraPostConfig
 import com.dhenry.glia.cassandra.domain.aggregate.AbstractAggregateRoot
 import com.dhenry.glia.cassandra.domain.models.AggregatePrimaryKey
 import com.dhenry.glia.cassandra.domain.repositories.DomainEventsRepository
-import com.dhenry.glia.config.DomainEventsService
+import com.dhenry.glia.service.DomainEventsService
 import com.dhenry.glia.test.ProducerEventListener
 import com.dhenry.glia.test.autoconfigure.amqp.rabbit.AutoConfigureRabbitProducerListener
 import org.assertj.core.api.Assertions.assertThat
@@ -63,9 +62,6 @@ class CassandraRabbitIntegrationTest {
   @Autowired
   private lateinit var cassandraSessionFactoryBean: CassandraSessionFactoryBean
 
-  @Autowired
-  private lateinit var cassandraConfig: CassandraPostConfig
-
   @BeforeTest
   fun setupBase() {
     cassandraAdminTemplate.keyspaceMetadata.tables.onEach {
@@ -74,7 +70,6 @@ class CassandraRabbitIntegrationTest {
 
     producerEventListener.clearMessages()
     cassandraSessionFactoryBean.afterPropertiesSet()
-    cassandraConfig.setupStaticActiveColumn()
   }
 
   @Test

@@ -14,6 +14,9 @@ abstract class BaseAbstractAggregateRoot<A : BaseAbstractAggregateRoot<A>>(
   @Transient
   protected var domainEvents = mutableListOf<Any>()
 
+  @Transient
+  protected var aggregateRoot: BaseAbstractAggregateRoot<*>? = null
+
   /**
    * Registers the given event object for publication on a call to a Spring Data repository's save methods.
    *
@@ -37,6 +40,9 @@ abstract class BaseAbstractAggregateRoot<A : BaseAbstractAggregateRoot<A>>(
   @AfterDomainEventPublication
   protected fun clearDomainEvents() {
     domainEvents.clear()
+    if (aggregateRoot != null) {
+
+    }
   }
 
   /**

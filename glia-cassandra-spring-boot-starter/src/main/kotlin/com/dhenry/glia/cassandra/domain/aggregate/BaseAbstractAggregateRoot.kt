@@ -6,6 +6,9 @@ import org.springframework.data.annotation.Transient
 import org.springframework.data.domain.AfterDomainEventPublication
 import org.springframework.data.domain.DomainEvents
 import org.springframework.util.Assert
+import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.functions
+import kotlin.reflect.jvm.isAccessible
 
 abstract class BaseAbstractAggregateRoot<A : BaseAbstractAggregateRoot<A>>(
     @Transient open val aggregatePrimaryKey: AggregatePrimaryKey
@@ -41,7 +44,12 @@ abstract class BaseAbstractAggregateRoot<A : BaseAbstractAggregateRoot<A>>(
   protected fun clearDomainEvents() {
     domainEvents.clear()
     if (aggregateRoot != null) {
-
+      aggregateRoot!!::class.functions
+          .filter { it.findAnnotation<AfterDomainEventPublication>() != null }
+          .forEach {
+            it.isAccessible = true
+            it.call(aggregateRoot)
+          }
     }
   }
 

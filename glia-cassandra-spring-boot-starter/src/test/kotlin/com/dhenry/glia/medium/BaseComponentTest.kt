@@ -73,6 +73,31 @@ abstract class BaseComponentTest {
             property = testEvent.property
         }
 
+        override fun toString(): String {
+            return "TestAggregate(id='$id', updated=$updated, property=$property)"
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as TestAggregate
+
+            if (id != other.id) return false
+            if (updated != other.updated) return false
+            if (property != other.property) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = id.hashCode()
+            result = 31 * result + updated.hashCode()
+            result = 31 * result + (property?.hashCode() ?: 0)
+            return result
+        }
+
+
     }
 
     @Event("routingKey")

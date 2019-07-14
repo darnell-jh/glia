@@ -9,6 +9,8 @@ import org.springframework.data.cassandra.core.CassandraOperations
 import org.springframework.data.cassandra.core.mapping.event.BeforeSaveEvent
 import org.springframework.data.cassandra.repository.query.CassandraEntityInformation
 import org.springframework.data.cassandra.repository.support.SimpleCassandraRepository
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 internal class GliaRepositoryBaseClassImpl(
     metadata: CassandraEntityInformation<DomainEvents, AggregatePrimaryKey>,
@@ -16,16 +18,17 @@ internal class GliaRepositoryBaseClassImpl(
 ) : SimpleCassandraRepository<DomainEvents, AggregatePrimaryKey>(metadata, operations), GliaRepositoryBaseClass {
 
   override fun onApplicationEvent(beforeSaveEvent: BeforeSaveEvent<*>) {
+    val microseconds = ChronoUnit.MICROS.between(Instant.EPOCH, Instant.now())
+    val timestamp = QueryBuilder.timestamp(microseconds)
     with (beforeSaveEvent) {
-      val domainEvents = source as DomainEvents
       when(statement) {
-        is Update -> {
-          val update = statement as Update
-          update.onlyIf(QueryBuilder.`in`(DomainEvents.FIELD_SEQUENCE, domainEvents.aggregatePrimaryKey.sequence, null))
-        }
         is Insert -> {
           val insert = statement as Insert
-          insert.ifNotExists()
+          insert.using(timestamp)
+        }
+        is Update -> {
+          val update = statement as Update
+          update.using(timestamp)
         }
         else -> {}
       }

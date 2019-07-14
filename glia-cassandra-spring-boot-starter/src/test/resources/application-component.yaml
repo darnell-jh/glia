@@ -5,6 +5,10 @@ spring:
     cassandra:
       cluster-name: testcluster
       keyspace-name: ${spring.application.name}
+      consistency-level: LOCAL_QUORUM
+  rabbitmq:
+    template:
+      exchange: eventbus
 glia:
   cassandra:
     replication:

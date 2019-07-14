@@ -63,8 +63,7 @@ abstract class AbstractDomainEventsService(
    * @param state The event state to update to
    */
   private fun updateEventState(aggregate: BaseAbstractAggregateRoot<*>, event: AggregateEvent, state: EventState) {
-    val newEvent = event.copy(state = state)
-    domainEventsRepository.updateLastEvent(aggregate, newEvent)
+    domainEventsRepository.updateLastEvent(aggregate, event, state)
   }
 
   private fun save(domainEvents: DomainEvents) {

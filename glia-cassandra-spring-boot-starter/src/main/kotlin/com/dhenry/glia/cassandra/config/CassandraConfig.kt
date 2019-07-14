@@ -4,6 +4,7 @@ import com.datastax.driver.core.Cluster
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
 import com.dhenry.glia.cassandra.domain.entities.TBL_DOMAIN_EVENTS
 import com.dhenry.glia.cassandra.domain.models.TYPE_AGGREGATE_EVENT
+import com.dhenry.glia.cassandra.domain.models.TYPE_AGGREGATE_EVENT_STATE
 import com.dhenry.glia.cassandra.domain.repositories.GliaRepositoryBaseClassImpl
 import com.dhenry.glia.cassandra.domain.template.GliaCassandraTemplate
 import org.slf4j.Logger
@@ -94,20 +95,25 @@ class CassandraConfig(
   override fun getEntityBasePackages(): Array<String> {
     LOGGER.info("Configured base packages {}", replicationConfig.entityBasePackages)
     var basePackages = replicationConfig.entityBasePackages ?: arrayOf()
-    if (replicationConfig.enableDomainEvents) basePackages += DOMAIN_EVENTS_PACKAGE
+    if (!consumerConfig.enabled || replicationConfig.enableDomainEvents) basePackages += DOMAIN_EVENTS_PACKAGE
     LOGGER.info("Using entity base packages {}", basePackages)
     return basePackages
   }
 
   override fun getStartupScripts(): MutableList<String> {
-    return if (!consumerConfig.enabled) mutableListOf(
+    return if (!consumerConfig.enabled || replicationConfig.enableDomainEvents) mutableListOf(
         """
           CREATE TYPE IF NOT EXISTS $keyspace.$TYPE_AGGREGATE_EVENT (
             eventid uuid,
             payload text,
             routingkey text,
-            state text,
             version text
+          )
+        """.trimIndent(),
+        """
+          CREATE TYPE IF NOT EXISTS $keyspace.$TYPE_AGGREGATE_EVENT_STATE (
+            eventid uuid,
+            state text
           )
         """.trimIndent(),
         """
@@ -116,6 +122,7 @@ class CassandraConfig(
             sequence bigint,
             active boolean static,
             events list<frozen<$TYPE_AGGREGATE_EVENT>>,
+            eventstate list<frozen<$TYPE_AGGREGATE_EVENT_STATE>>,
             timestamp timestamp,
             PRIMARY KEY (aggregateid, sequence)
           ) WITH CLUSTERING ORDER BY (sequence DESC)

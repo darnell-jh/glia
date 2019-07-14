@@ -3,6 +3,8 @@ version '1.0.0'
 dependencies {
     api 'org.springframework.boot:spring-boot-starter-data-cassandra'
     implementation 'org.hibernate:hibernate-validator:6.0.17.Final'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation project(':glia-rabbit-spring-boot-starter')
 }
 
 publishing {

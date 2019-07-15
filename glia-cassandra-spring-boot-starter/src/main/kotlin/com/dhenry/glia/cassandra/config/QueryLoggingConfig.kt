@@ -11,7 +11,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.cassandra.core.mapping.event.BeforeSaveEvent
 
-
 @Configuration
 @ConditionalOnProperty(prefix = "glia.cassandra.logging", name = ["enabled"])
 class QueryLoggingConfig: ApplicationListener<BeforeSaveEvent<*>> {

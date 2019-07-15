@@ -18,6 +18,6 @@ interface DomainEventsExtRepository {
    * @param aggregateRoot Aggregate root to update
    * @param event Event that will be updated in aggregate
    */
-  fun updateLastEvent(aggregateRoot: BaseAbstractAggregateRoot<*>, event: AggregateEvent, eventState: EventState)
+  fun updateEventState(aggregateRoot: BaseAbstractAggregateRoot<*>, event: AggregateEvent, eventState: EventState)
 
 }

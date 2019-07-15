@@ -2,9 +2,7 @@ package com.dhenry.glia.cassandra.domain.entities
 
 import com.datastax.driver.core.DataType
 import com.dhenry.glia.cassandra.domain.aggregate.BaseAbstractAggregateRoot
-import com.dhenry.glia.cassandra.domain.annotations.Sequenced
 import com.dhenry.glia.cassandra.domain.models.AggregateEvent
-import com.dhenry.glia.cassandra.domain.models.AggregateEventState
 import com.dhenry.glia.cassandra.domain.models.AggregatePrimaryKey
 import org.springframework.data.cassandra.core.mapping.CassandraType
 import org.springframework.data.cassandra.core.mapping.PrimaryKey
@@ -15,12 +13,10 @@ import java.util.*
 const val TBL_DOMAIN_EVENTS = "domainevents"
 
 @Table(value = TBL_DOMAIN_EVENTS)
-@Sequenced(sequence = "aggregatePrimaryKey.sequence")
 class DomainEvents internal constructor (
     @PrimaryKey override val aggregatePrimaryKey: AggregatePrimaryKey,
     active: Boolean = true,
     events: List<AggregateEvent> = listOf(),
-    eventState: List<AggregateEventState> = listOf(),
     timestamp: Date = Date.from(Instant.now())
 ): BaseAbstractAggregateRoot<DomainEvents>(aggregatePrimaryKey) {
 
@@ -33,9 +29,6 @@ class DomainEvents internal constructor (
   var timestamp: Date = Date.from(Instant.now())
     internal set
 
-  @CassandraType(type = DataType.Name.UDT) var eventState: List<AggregateEventState> = listOf()
-    internal set
-
   operator fun component1() = aggregatePrimaryKey
   operator fun component2() = active
   operator fun component3() = events
@@ -46,13 +39,11 @@ class DomainEvents internal constructor (
     const val FIELD_SEQUENCE = "sequence"
     const val FIELD_ACTIVE = "active"
     const val FIELD_EVENTS = "events"
-    const val FIELD_EVENT_STATE = "eventstate"
   }
 
   init {
     this.active = active
     this.events = events
-    this.eventState = eventState
     this.timestamp = timestamp
   }
 

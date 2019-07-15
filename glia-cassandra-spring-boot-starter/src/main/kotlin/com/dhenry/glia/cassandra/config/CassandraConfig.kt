@@ -2,10 +2,10 @@ package com.dhenry.glia.cassandra.config
 
 import com.datastax.driver.core.Cluster
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
+import com.dhenry.glia.cassandra.domain.entities.TBL_AGGREGATE_EVENT_STATE
 import com.dhenry.glia.cassandra.domain.entities.TBL_DOMAIN_EVENTS
 import com.dhenry.glia.cassandra.domain.models.TYPE_AGGREGATE_EVENT
-import com.dhenry.glia.cassandra.domain.models.TYPE_AGGREGATE_EVENT_STATE
-import com.dhenry.glia.cassandra.domain.repositories.GliaRepositoryBaseClassImpl
+import com.dhenry.glia.cassandra.domain.repositories.GliaRepositoryFactoryBean
 import com.dhenry.glia.cassandra.domain.template.GliaCassandraTemplate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -32,7 +32,7 @@ private const val DOMAIN_EVENTS_PACKAGE = "com.dhenry.glia.cassandra.domain"
 )
 @EnableCassandraRepositories(
     basePackages = ["com.dhenry.glia.cassandra.domain.repositories"],
-    repositoryBaseClass = GliaRepositoryBaseClassImpl::class
+    repositoryFactoryBeanClass = GliaRepositoryFactoryBean::class
 )
 class CassandraConfig(
     @Value("\${spring.data.cassandra.keyspace-name}") private val keyspace: String,
@@ -111,10 +111,12 @@ class CassandraConfig(
           )
         """.trimIndent(),
         """
-          CREATE TYPE IF NOT EXISTS $keyspace.$TYPE_AGGREGATE_EVENT_STATE (
+          CREATE TABLE IF NOT EXISTS $keyspace.$TBL_AGGREGATE_EVENT_STATE (
+            aggregateid text,
             eventid uuid,
-            state text
-          )
+            state text,
+            PRIMARY KEY (aggregateid, eventid)
+          ) WITH CLUSTERING ORDER BY (eventid DESC)
         """.trimIndent(),
         """
           CREATE TABLE IF NOT EXISTS $keyspace.$TBL_DOMAIN_EVENTS (
@@ -122,7 +124,6 @@ class CassandraConfig(
             sequence bigint,
             active boolean static,
             events list<frozen<$TYPE_AGGREGATE_EVENT>>,
-            eventstate list<frozen<$TYPE_AGGREGATE_EVENT_STATE>>,
             timestamp timestamp,
             PRIMARY KEY (aggregateid, sequence)
           ) WITH CLUSTERING ORDER BY (sequence DESC)

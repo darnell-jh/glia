@@ -1,65 +1,107 @@
 package com.dhenry.glia.cassandra.domain.repositories
 
-import com.datastax.driver.core.querybuilder.Insert
+import com.datastax.driver.core.querybuilder.Batch
 import com.datastax.driver.core.querybuilder.QueryBuilder
-import com.datastax.driver.core.querybuilder.Update
 import com.dhenry.glia.cassandra.domain.entities.DomainEvents
+import com.dhenry.glia.cassandra.domain.entities.TBL_DOMAIN_EVENTS
 import com.dhenry.glia.cassandra.domain.models.AggregatePrimaryKey
+import com.dhenry.glia.cassandra.exceptions.WriteNotAppliedException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.data.cassandra.core.CassandraOperations
-import org.springframework.data.cassandra.core.mapping.event.BeforeSaveEvent
 import org.springframework.data.cassandra.repository.query.CassandraEntityInformation
 import org.springframework.data.cassandra.repository.support.SimpleCassandraRepository
-import java.time.Instant
-import java.time.temporal.ChronoUnit
+import org.springframework.util.Assert
 
 internal class GliaRepositoryBaseClassImpl(
     metadata: CassandraEntityInformation<DomainEvents, AggregatePrimaryKey>,
-    operations: CassandraOperations
+    private val operations: CassandraOperations
 ) : SimpleCassandraRepository<DomainEvents, AggregatePrimaryKey>(metadata, operations), GliaRepositoryBaseClass {
 
-  override fun onApplicationEvent(beforeSaveEvent: BeforeSaveEvent<*>) {
-    val microseconds = ChronoUnit.MICROS.between(Instant.EPOCH, Instant.now())
-    val timestamp = QueryBuilder.timestamp(microseconds)
-    with (beforeSaveEvent) {
-      when(statement) {
-        is Insert -> {
-          val insert = statement as Insert
-          insert.using(timestamp)
-        }
-        is Update -> {
-          val update = statement as Update
-          update.using(timestamp)
-        }
-        else -> {}
-      }
-    }
+  companion object {
+    private val LOGGER: Logger = LoggerFactory.getLogger(GliaRepositoryBaseClassImpl::class.java)
   }
 
   override fun <S : DomainEvents?> insert(entity: S): S {
-    if (entity != null) {
-      entity.aggregatePrimaryKey.sequence++
-    }
+    Assert.notNull(entity, "Entity must not be null")
+    entity!!.aggregatePrimaryKey.sequence++
     return super.insert(entity)
   }
 
   override fun <S : DomainEvents?> insert(entities: MutableIterable<S>): MutableList<S> {
-    entities.onEach { if (it != null) {
-      it.aggregatePrimaryKey.sequence++
-    } }
-    return super.insert(entities)
+    Assert.notNull(entities, "Entity must not be null")
+
+    if (entities.count() == 1) {
+      entities.forEach {
+        Assert.notNull(it, "Entity must not be null")
+        it!!.aggregatePrimaryKey.sequence++
+      }
+      return super.insert(entities)
+    }
+
+    val batches = mutableMapOf<String, Batch>()
+
+    entities.forEach {
+      Assert.notNull(it, "Entity must not be null")
+      it!!.aggregatePrimaryKey.sequence++
+      val insert = QueryBuilder.insertInto(TBL_DOMAIN_EVENTS)
+      insert.ifNotExists()
+      operations.converter.write(it as Any, insert)
+      val batch = batches.getOrPut(it.aggregatePrimaryKey.aggregateId) { QueryBuilder.batch() }
+      batch.add(insert)
+    }
+
+    var allApplied  = true
+    batches.forEach { (key, batch) ->
+      val applied = operations.cqlOperations.execute(batch)
+      if (!applied) LOGGER.warn("Failed to apply writes for aggregateId {}", key)
+      allApplied = allApplied and applied
+    }
+    if (!allApplied) throw WriteNotAppliedException()
+    return entities.toMutableList()
   }
 
   override fun <S : DomainEvents?> save(entity: S): S {
-    if (entity != null) {
-      entity.aggregatePrimaryKey.sequence++
-    }
+    Assert.notNull(entity, "Entity must not be null")
+    entity!!.aggregatePrimaryKey.sequence++
     return super.save(entity)
   }
 
   override fun <S : DomainEvents?> saveAll(entities: MutableIterable<S>): MutableList<S> {
-    entities.onEach { if (it != null) {
-      it.aggregatePrimaryKey.sequence++
-    } }
-    return super.saveAll(entities)
+    Assert.notNull(entities, "Entity must not be null")
+
+    if (entities.count() == 1) {
+      entities.forEach {
+        Assert.notNull(it, "Entity must not be null")
+        it!!.aggregatePrimaryKey.sequence++
+      }
+      return super.insert(entities)
+    }
+
+    val batches = mutableMapOf<String, Batch>()
+
+    entities.forEach {
+      Assert.notNull(it, "Entity must not be null")
+      it!!.aggregatePrimaryKey.sequence++
+      val insert = QueryBuilder.insertInto(TBL_DOMAIN_EVENTS)
+      insert.ifNotExists()
+      val toInsert = LinkedHashMap<String, Any>()
+      operations.converter.write(it as Any, toInsert,
+          operations.converter.mappingContext.getRequiredPersistentEntity(DomainEvents::class.java))
+      for (entry in toInsert.entries) {
+        insert.value(entry.key, entry.value)
+      }
+      val batch = batches.getOrPut(it.aggregatePrimaryKey.aggregateId)  { QueryBuilder.batch() }
+      batch.add(insert)
+    }
+
+    var allApplied  = true
+    batches.forEach { (key, batch) ->
+      val applied = operations.cqlOperations.execute(batch)
+      if (!applied) LOGGER.warn("Failed to apply writes for aggregateId {}", key)
+      allApplied = allApplied and applied
+    }
+    if (!allApplied) throw WriteNotAppliedException()
+    return entities.toMutableList()
   }
 }

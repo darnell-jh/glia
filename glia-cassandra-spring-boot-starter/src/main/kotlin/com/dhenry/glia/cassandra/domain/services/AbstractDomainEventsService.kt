@@ -8,13 +8,8 @@ import com.dhenry.glia.cassandra.domain.entities.DomainEvents
 import com.dhenry.glia.cassandra.domain.models.AggregateEvent
 import com.dhenry.glia.cassandra.domain.models.EventState
 import com.dhenry.glia.cassandra.domain.repositories.DomainEventsRepository
-import com.dhenry.glia.cassandra.exceptions.WriteNotAppliedException
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import org.springframework.aop.framework.ProxyFactoryBean
 import org.springframework.context.ApplicationContext
-import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.PayloadApplicationEvent
 import org.springframework.context.event.EventListener
 import java.util.concurrent.atomic.AtomicInteger
@@ -34,10 +29,6 @@ abstract class AbstractDomainEventsService(
     protected open val objectMapper: ObjectMapper,
     protected open val applicationContext: ApplicationContext
 ) {
-
-  companion object {
-    val LOGGER: Logger = LoggerFactory.getLogger(AbstractDomainEventsService::class.java)
-  }
 
   /**
    * Updates the aggregate with payload
@@ -63,16 +54,10 @@ abstract class AbstractDomainEventsService(
    * @param state The event state to update to
    */
   private fun updateEventState(aggregate: BaseAbstractAggregateRoot<*>, event: AggregateEvent, state: EventState) {
-    domainEventsRepository.updateLastEvent(aggregate, event, state)
+    domainEventsRepository.updateEventState(aggregate, event, state)
   }
 
-  private fun save(domainEvents: DomainEvents) {
-    try {
-      domainEventsRepository.save(domainEvents)
-    } catch (ex: WriteNotAppliedException) {
-      LOGGER.error("Write was not applied for aggregate {}", domainEvents.aggregatePrimaryKey.aggregateId);
-    }
-  }
+  private fun save(domainEvents: DomainEvents) = domainEventsRepository.save(domainEvents)
 
   /**
    * Saves the aggregate root to the repository

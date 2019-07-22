@@ -19,12 +19,10 @@ import org.springframework.data.cassandra.core.CassandraAdminTemplate
 import org.springframework.data.cassandra.core.cql.CqlIdentifier
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
-import java.util.stream.Collectors
 import kotlin.streams.toList
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 @ActiveProfiles("integration")
 @RunWith(SpringRunner::class)

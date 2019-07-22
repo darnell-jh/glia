@@ -65,6 +65,10 @@ subprojects {
         if (name.contains('spring')) {
             implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
         }
+
+        if (name.contains('spring') && name != 'glia-spring-boot-starter-test') {
+            testImplementation project(':glia-spring-boot-starter-test')
+        }
     }
 
     clean {
@@ -115,7 +119,7 @@ subprojects {
 }
 
 clean {
-    'build'
+    delete 'build'
 }
 
 wrapper {

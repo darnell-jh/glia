@@ -265,10 +265,10 @@ abstract class AbstractDomainEventsService(
    * @param aggregate Aggregate that the event is created from
    */
   protected abstract fun doPublish(routingKey: String, payload: Any,
-                                   aggregate: AbstractAggregateRoot<*>, event:AggregateEvent)
+                                   aggregate: AbstractAggregateRoot<*>, event: AggregateEvent)
 
   private fun publishEvent(payload: Any, eventAnnotation: Event,
-                            aggregate: AbstractAggregateRoot<*>, event: AggregateEvent) {
+                           aggregate: AbstractAggregateRoot<*>, event: AggregateEvent) {
     try {
       doPublish(eventAnnotation.routingKey, payload, aggregate, event)
       updateEventState(aggregate, event, EventState.SENT)

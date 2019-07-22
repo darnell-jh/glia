@@ -1,11 +1,12 @@
 package com.dhenry.glia.cassandra.config
 
 import com.datastax.driver.core.Cluster
+import com.datastax.driver.core.Session
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
+import com.datastax.driver.mapping.MappingManager
 import com.dhenry.glia.cassandra.domain.entities.TBL_AGGREGATE_EVENT_STATE
 import com.dhenry.glia.cassandra.domain.entities.TBL_DOMAIN_EVENTS
 import com.dhenry.glia.cassandra.domain.models.TYPE_AGGREGATE_EVENT
-import com.dhenry.glia.cassandra.domain.repositories.GliaRepositoryFactoryBean
 import com.dhenry.glia.cassandra.domain.template.GliaCassandraTemplate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -14,13 +15,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.data.cassandra.SessionFactory
 import org.springframework.data.cassandra.config.AbstractCassandraConfiguration
 import org.springframework.data.cassandra.config.CassandraCqlClusterFactoryBean
 import org.springframework.data.cassandra.config.SchemaAction
 import org.springframework.data.cassandra.core.CassandraAdminTemplate
 import org.springframework.data.cassandra.core.cql.keyspace.CreateKeyspaceSpecification
 import org.springframework.data.cassandra.core.cql.keyspace.DropKeyspaceSpecification
-import org.springframework.data.cassandra.repository.config.EnableCassandraRepositories
 import java.util.*
 
 private const val DOMAIN_EVENTS_PACKAGE = "com.dhenry.glia.cassandra.domain"
@@ -29,10 +30,6 @@ private const val DOMAIN_EVENTS_PACKAGE = "com.dhenry.glia.cassandra.domain"
 @Configuration
 @EnableConfigurationProperties(
     ReplicationConfiguration::class, CassandraConfiguration::class, GliaConsumerConfig::class
-)
-@EnableCassandraRepositories(
-    basePackages = ["com.dhenry.glia.cassandra.domain.repositories"],
-    repositoryFactoryBeanClass = GliaRepositoryFactoryBean::class
 )
 class CassandraConfig(
     @Value("\${spring.data.cassandra.keyspace-name}") private val keyspace: String,
@@ -58,13 +55,21 @@ class CassandraConfig(
     spec
   }
 
+  override fun getRequiredSession(): Session {
+    return super.getRequiredSession()
+  }
+
+  @Bean
+  fun mappingManager(): MappingManager {
+    return MappingManager(requiredSession)
+  }
+
   override fun cassandraTemplate(): CassandraAdminTemplate {
     val options = GliaCassandraTemplate.Options()
     options.throwExceptionsWhenWritesNotApplied = true
     return GliaCassandraTemplate(sessionFactory(), cassandraConverter(), options)
   }
 
-  @Bean
   override fun cluster(): CassandraCqlClusterFactoryBean {
     val bean = CassandraCqlClusterFactoryBean()
     bean.setJmxReportingEnabled(false)
@@ -103,7 +108,7 @@ class CassandraConfig(
   override fun getStartupScripts(): MutableList<String> {
     return if (!consumerConfig.enabled || replicationConfig.enableDomainEvents) mutableListOf(
         """
-          CREATE TYPE IF NOT EXISTS $keyspace.$TYPE_AGGREGATE_EVENT (
+          CREATE TYPE IF NOT EXISTS $formattedKeyspace.$TYPE_AGGREGATE_EVENT (
             eventid uuid,
             payload text,
             routingkey text,
@@ -111,7 +116,7 @@ class CassandraConfig(
           )
         """.trimIndent(),
         """
-          CREATE TABLE IF NOT EXISTS $keyspace.$TBL_AGGREGATE_EVENT_STATE (
+          CREATE TABLE IF NOT EXISTS $formattedKeyspace.$TBL_AGGREGATE_EVENT_STATE (
             aggregateid text,
             eventid uuid,
             state text,
@@ -119,7 +124,7 @@ class CassandraConfig(
           ) WITH CLUSTERING ORDER BY (eventid DESC)
         """.trimIndent(),
         """
-          CREATE TABLE IF NOT EXISTS $keyspace.$TBL_DOMAIN_EVENTS (
+          CREATE TABLE IF NOT EXISTS $formattedKeyspace.$TBL_DOMAIN_EVENTS (
             aggregateid text,
             sequence bigint,
             active boolean static,

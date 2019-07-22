@@ -20,8 +20,10 @@ import org.springframework.data.cassandra.core.cql.CqlIdentifier
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import java.util.stream.Collectors
+import kotlin.streams.toList
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @ActiveProfiles("integration")
@@ -85,11 +87,9 @@ class CassandraRabbitIntegrationTest {
 
     // Assert
     await.untilAsserted {
-      val (aggregateId, timeUUID) = aggregate.aggregatePrimaryKey
-      assertTrue("aggregate should exist") {
-        domainEventsRepository
-            .findById(AggregatePrimaryKey(aggregateId, timeUUID))
-            .isPresent
+      val (aggregateId, sequence) = aggregate.aggregatePrimaryKey
+      assertNotNull("aggregate should exist") {
+        domainEventsRepository.findOneById(aggregateId, sequence)
       }
 
       assertThat(aggregate.property).isEqualTo(property)
@@ -121,7 +121,7 @@ class CassandraRabbitIntegrationTest {
       assertThat(domainEventsRepository.countById(aggregateId)).isEqualTo(1)
       val events = domainEventsRepository.streamById(aggregateId)
           .flatMap { record -> record.events.stream() }
-          .collect(Collectors.toList())
+          .toList()
       assertThat(events).hasSize(3)
     }
 

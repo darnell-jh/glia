@@ -1,17 +1,17 @@
-package com.dhenry.glia.cassandra.domain.aggregate
+package com.dhenry.glia.data.aggregate
 
 import com.dhenry.glia.annotations.Event
 import com.dhenry.glia.annotations.EventSourceHandler
-import com.dhenry.glia.cassandra.domain.models.AggregatePrimaryKey
+import com.dhenry.glia.data.models.IAggregatePrimaryKey
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.valueParameters
 
-abstract class AbstractAggregateRoot<A : AbstractAggregateRoot<A>>(
-    override val aggregatePrimaryKey: AggregatePrimaryKey
-): BaseAbstractAggregateRoot<A>(aggregatePrimaryKey) {
+abstract class AbstractAggregateRoot<A : AbstractAggregateRoot<A, K>, K: IAggregatePrimaryKey>(
+    override val aggregatePrimaryKey: K
+): BaseAbstractAggregateRoot<A, K>(aggregatePrimaryKey) {
 
   var latestOnly: Boolean = false
     protected set(enable) {

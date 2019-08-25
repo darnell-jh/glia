@@ -1,6 +1,6 @@
-package com.dhenry.glia.cassandra.domain.aggregate
+package com.dhenry.glia.data.aggregate
 
-import com.dhenry.glia.cassandra.domain.models.AggregatePrimaryKey
+import com.dhenry.glia.data.models.IAggregatePrimaryKey
 import org.springframework.context.PayloadApplicationEvent
 import org.springframework.data.annotation.Transient
 import org.springframework.data.domain.AfterDomainEventPublication
@@ -10,15 +10,15 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.functions
 import kotlin.reflect.jvm.isAccessible
 
-abstract class BaseAbstractAggregateRoot<A : BaseAbstractAggregateRoot<A>>(
-    @Transient open val aggregatePrimaryKey: AggregatePrimaryKey
+abstract class BaseAbstractAggregateRoot<A : BaseAbstractAggregateRoot<A, K>, K: IAggregatePrimaryKey>(
+    @Transient open val aggregatePrimaryKey: K
 ) {
 
   @Transient
   protected var domainEvents = mutableListOf<Any>()
 
   @Transient
-  protected var aggregateRoot: BaseAbstractAggregateRoot<*>? = null
+  protected var aggregateRoot: BaseAbstractAggregateRoot<*, *>? = null
 
   /**
    * Registers the given event object for publication on a call to a Spring Data repository's save methods.
@@ -68,7 +68,7 @@ abstract class BaseAbstractAggregateRoot<A : BaseAbstractAggregateRoot<A>>(
    * @return the aggregate
    */
   @Suppress("UNCHECKED_CAST")
-  fun andEventsFrom(aggregate: BaseAbstractAggregateRoot<*>): A {
+  fun andEventsFrom(aggregate: BaseAbstractAggregateRoot<*, *>): A {
 
     Assert.notNull(aggregate, "Aggregate must not be null!")
     Assert.notNull(aggregate.domainEvents, "Domain events must exist")

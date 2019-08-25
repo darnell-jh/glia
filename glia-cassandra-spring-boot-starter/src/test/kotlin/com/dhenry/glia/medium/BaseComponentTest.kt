@@ -3,19 +3,15 @@ package com.dhenry.glia.medium
 import com.dhenry.glia.Application
 import com.dhenry.glia.annotations.Event
 import com.dhenry.glia.annotations.EventSourceHandler
-import com.dhenry.glia.cassandra.domain.aggregate.AbstractAggregateRoot
-import com.dhenry.glia.cassandra.domain.models.AggregateEvent
 import com.dhenry.glia.cassandra.domain.models.AggregatePrimaryKey
-import com.dhenry.glia.cassandra.domain.repositories.DomainEventsRepository
-import com.dhenry.glia.cassandra.domain.services.AbstractDomainEventsService
+import com.dhenry.glia.cassandra.domain.services.CassandraDomainEventsService
+import com.dhenry.glia.data.aggregate.AbstractAggregateRoot
+import com.dhenry.glia.service.EventMediator
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.runner.RunWith
-import org.springframework.aop.framework.ProxyFactoryBean
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.context.ApplicationContext
-import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.data.cassandra.config.CassandraSessionFactoryBean
 import org.springframework.data.cassandra.core.CassandraAdminTemplate
@@ -23,6 +19,7 @@ import org.springframework.data.cassandra.core.CassandraTemplate
 import org.springframework.data.cassandra.core.cql.CqlIdentifier
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
+import java.time.Instant
 import kotlin.test.BeforeTest
 
 @ActiveProfiles("component")
@@ -40,7 +37,7 @@ abstract class BaseComponentTest {
     protected lateinit var objectMapper: ObjectMapper
 
     @Autowired
-    protected lateinit var domainEventsService: AbstractDomainEventsService
+    protected lateinit var domainEventsService: CassandraDomainEventsService
 
     @Autowired
     protected lateinit var cassandraTemplate: CassandraTemplate
@@ -55,7 +52,7 @@ abstract class BaseComponentTest {
     }
 
     class TestAggregate(val id: String = "test")
-        : AbstractAggregateRoot<TestAggregate>(AggregatePrimaryKey(id)) {
+        : AbstractAggregateRoot<TestAggregate, AggregatePrimaryKey>(AggregatePrimaryKey(id)) {
 
         var updated: Boolean = false
             private set
@@ -106,22 +103,14 @@ abstract class BaseComponentTest {
     @TestConfiguration
     class TestConfig {
         @Bean
-        fun objectMapper(): ObjectMapper {
-            return ObjectMapper()
-        }
-
-        @Bean
-        fun domainEventService(repository: DomainEventsRepository, objectMapper: ObjectMapper,
-                               applicationContext: ApplicationContext)
-            : AbstractDomainEventsService {
-            return object: AbstractDomainEventsService(repository, objectMapper, applicationContext) {
-                override fun loadEvent(event: AggregateEvent): Any {
-                    return objectMapper.readValue(event.payload, TestEvent::class.java)
+        fun eventMediator(objectMapper: ObjectMapper): EventMediator {
+            return object: EventMediator {
+                override fun load(routingKey: String, payloadJson: String): Any {
+                    return objectMapper.readValue(payloadJson, TestEvent::class.java)
                 }
 
-                override fun doPublish(routingKey: String, payload: Any, aggregate: AbstractAggregateRoot<*>,
-                                       event: AggregateEvent) {
-
+                override fun publish(routingKey: String, payload: Any, aggregate: AbstractAggregateRoot<*, *>,
+                                     event: Any, timestamp: Instant) {
                 }
             }
         }

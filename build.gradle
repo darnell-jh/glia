@@ -27,6 +27,8 @@ allprojects {
 
 subprojects {
 
+    version '2.0.0'
+
     apply plugin: 'org.jetbrains.kotlin.jvm'
     apply plugin: 'java-library'
 
@@ -42,6 +44,10 @@ subprojects {
     }
 
     group 'com.dhenry.glia'
+
+    ext {
+        publishedVersion = '2.0.0'
+    }
 
     dependencies {
         // Kotlin Libraries

@@ -1,11 +1,10 @@
-version '1.0.0'
-
 dependencies {
     api 'org.springframework.boot:spring-boot-starter-data-cassandra'
     implementation 'org.hibernate:hibernate-validator:6.0.17.Final'
     implementation 'com.datastax.cassandra:cassandra-driver-mapping:3.6.0'
+    implementation project(':glia-spring-boot-data')
+    implementation project(':glia-spring-boot-starter')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation project(':glia-rabbit-spring-boot-starter')
 }
 
 publishing {
@@ -13,7 +12,7 @@ publishing {
         gliaCassandra(MavenPublication) {
             groupId = 'com.dhenry.glia'
             artifactId = 'glia-cassandra-spring-boot-starter'
-            version = '1.0.0'
+            version = project.publishedVersion
 
             from components.java
             // artifact sourcesJar

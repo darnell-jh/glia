@@ -1,6 +1,6 @@
 package com.dhenry.glia.cassandra.domain.entities
 
-import com.dhenry.glia.cassandra.domain.models.EventState
+import com.dhenry.glia.data.models.EventState
 import com.dhenry.glia.cassandra.domain.models.EventStatePrimaryKey
 import org.springframework.data.cassandra.core.mapping.PrimaryKey
 import org.springframework.data.cassandra.core.mapping.Table

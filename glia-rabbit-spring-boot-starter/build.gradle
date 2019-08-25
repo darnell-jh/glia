@@ -1,7 +1,6 @@
-version '1.0.0'
-
 dependencies {
     api 'org.springframework.boot:spring-boot-starter-amqp'
+    implementation project(':glia-spring-boot-starter')
 }
 
 publishing {
@@ -9,7 +8,7 @@ publishing {
         gliaRabbit(MavenPublication) {
             groupId = 'com.dhenry.glia'
             artifactId = 'glia-rabbit-spring-boot-starter'
-            version = '1.0.0'
+            version = project.publishedVersion
 
             from components.java
             artifact kotlinSourcesJar

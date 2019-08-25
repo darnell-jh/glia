@@ -1,8 +1,12 @@
+dependencies {
+    api 'org.springframework.amqp:spring-amqp'
+}
+
 publishing {
     publications {
-        gliaCore(MavenPublication) {
+        gliaAmqp(MavenPublication) {
             groupId = 'com.dhenry.glia'
-            artifactId = 'glia-core'
+            artifactId = 'glia-spring-boot-amqp'
             version = project.publishedVersion
 
             from components.java

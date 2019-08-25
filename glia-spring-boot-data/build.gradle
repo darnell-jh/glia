@@ -1,0 +1,18 @@
+dependencies {
+    api 'org.springframework.data:spring-data-commons'
+    api 'org.springframework:spring-tx'
+    api 'org.springframework.boot:spring-boot'
+}
+
+publishing {
+    publications {
+        gliaData(MavenPublication) {
+            groupId = 'com.dhenry.glia'
+            artifactId = 'glia-spring-boot-data'
+            version = project.publishedVersion
+
+            from components.java
+            artifact kotlinSourcesJar
+        }
+    }
+}

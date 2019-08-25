@@ -3,7 +3,7 @@ package com.dhenry.glia.medium
 import com.dhenry.glia.cassandra.domain.entities.AggregateEventState
 import com.dhenry.glia.cassandra.domain.entities.DomainEvents
 import com.dhenry.glia.cassandra.domain.models.AggregateEvent
-import com.dhenry.glia.cassandra.domain.models.EventState
+import com.dhenry.glia.data.models.EventState
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.ListAssert
 import java.util.*

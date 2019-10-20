@@ -1,10 +1,8 @@
 package com.dhenry.glia.cassandra.domain.entities
 
-import com.datastax.driver.core.DataType
 import com.dhenry.glia.cassandra.domain.models.AggregateEvent
 import com.dhenry.glia.cassandra.domain.models.AggregatePrimaryKey
 import com.dhenry.glia.data.aggregate.BaseAbstractAggregateRoot
-import org.springframework.data.cassandra.core.mapping.CassandraType
 import org.springframework.data.cassandra.core.mapping.PrimaryKey
 import org.springframework.data.cassandra.core.mapping.Table
 import java.time.Instant
@@ -32,7 +30,6 @@ class DomainEvents internal constructor(
   var active: Boolean = active
     internal set
 
-  @CassandraType(type = DataType.Name.UDT)
   var events = events
     internal set
 

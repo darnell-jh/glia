@@ -7,127 +7,152 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
  */
 
 plugins {
-    // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
-    id 'org.jetbrains.kotlin.jvm' version '1.3.31' apply false
-    id 'org.springframework.boot' version '2.1.3.RELEASE' apply false
-    id 'org.jetbrains.kotlin.plugin.spring' version '1.3.31' apply false
-    id 'maven-publish'
+  // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
+  id 'org.jetbrains.kotlin.jvm' version '1.3.50'
+  id 'org.jetbrains.kotlin.plugin.spring' version '1.3.50' apply false
+  id 'org.springframework.boot' version '2.2.0.RELEASE' apply false
+  id 'maven-publish'
 }
 
 apply plugin: 'base'
 
 allprojects {
-    repositories {
-        // Use jcenter for resolving your dependencies.
-        // You can declare any Maven/Ivy/file repository here.
-        jcenter()
-        mavenLocal()
-    }
+  repositories {
+    // Use jcenter for resolving your dependencies.
+    // You can declare any Maven/Ivy/file repository here.
+    jcenter()
+    mavenLocal()
+  }
 }
 
 subprojects {
 
-    version '2.0.0'
+  group 'com.dhenry.glia'
+  version '2.0.0'
 
-    apply plugin: 'org.jetbrains.kotlin.jvm'
-    apply plugin: 'java-library'
+  apply plugin: 'org.jetbrains.kotlin.jvm'
+  apply plugin: 'java-library'
 
-    if (name.contains('spring')) {
-        apply plugin: 'org.jetbrains.kotlin.plugin.spring'
-        apply plugin: 'io.spring.dependency-management'
-
-        dependencyManagement {
-            imports {
-                mavenBom SpringBootPlugin.BOM_COORDINATES
+  ext {
+    publishedVersion = '2.0.0'
+    updatePom = { pom ->
+      pom.withXml {
+        def dependencies = asNode().getAt('dependencies').getAt('dependency')
+        def depMap = configurations.runtimeClasspath.resolvedConfiguration.firstLevelModuleDependencies
+            .collectEntries { ["$it.moduleGroup:$it.moduleName": it.moduleVersion] }
+        dependencies
+            .findAll { dep -> !dep['version'].text() }
+            .each { dep ->
+              def key = "${dep['groupId'].text()}:${dep['artifactId'].text()}"
+              def value = depMap.get(key)
+              dep.appendNode('version', value)
             }
-        }
+      }
+    }
+  }
+
+  if (name.contains('spring')) {
+    apply plugin: 'org.jetbrains.kotlin.plugin.spring'
+    apply plugin: 'io.spring.dependency-management'
+
+    dependencyManagement {
+      imports {
+        mavenBom SpringBootPlugin.BOM_COORDINATES
+      }
     }
 
-    group 'com.dhenry.glia'
+  }
 
-    ext {
-        publishedVersion = '2.0.0'
+  dependencies {
+    // Kotlin Libraries
+    implementation 'org.jetbrains.kotlin:kotlin-reflect'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-common'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7'
+
+    // Kotlin Testing Libraries.
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
+
+    // Awaitility
+    testImplementation 'org.awaitility:awaitility-kotlin:3.1.6'
+  }
+
+  clean {
+    delete 'out'
+  }
+
+  compileKotlin {
+    kotlinOptions {
+      freeCompilerArgs = ["-Xjsr305=strict"]
+      jvmTarget = "1.8"
     }
+  }
 
-    dependencies {
-        // Kotlin Libraries
-        implementation 'org.jetbrains.kotlin:kotlin-reflect'
-        implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
-        implementation 'org.jetbrains.kotlin:kotlin-stdlib'
-        implementation 'org.jetbrains.kotlin:kotlin-stdlib-common'
-        implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7'
-
-        // Kotlin Testing Libraries.
-        testImplementation 'org.jetbrains.kotlin:kotlin-test'
-        testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
-
-        // Awaitility
-        testImplementation 'org.awaitility:awaitility-kotlin:3.1.6'
-
-        if (name != 'glia-core' && name != 'glia-spring-boot-starter') {
-            implementation project(':glia-core')
-        }
-
-        if (name.contains('spring')) {
-            implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
-        }
-
-        if (name.contains('spring') && name != 'glia-spring-boot-starter-test') {
-            testImplementation project(':glia-spring-boot-starter-test')
-        }
+  compileTestKotlin {
+    kotlinOptions {
+      freeCompilerArgs = ["-Xjsr305=strict"]
+      jvmTarget = "1.8"
     }
+  }
 
-    clean {
-        delete 'out'
+  task runUnitTests(type: Test) {
+    description = 'Runs Unit Tests.'
+    group = 'verification'
+
+    filter {
+      includeTestsMatching '*UnitTest'
     }
+  }
 
-    compileKotlin {
-        kotlinOptions {
-            freeCompilerArgs = ["-Xjsr305=strict"]
-            jvmTarget = "1.8"
+  task runComponentTests(type: Test) {
+    description = 'Runs Component Tests.'
+    group = 'verification'
+
+    filter {
+      includeTestsMatching '*ComponentTest'
+    }
+  }
+
+  task runIntegrationTests(type: Test) {
+    description = 'Runs Integration Tests.'
+    group = 'verification'
+
+    filter {
+      includeTestsMatching '*IntegrationTest'
+    }
+  }
+
+  task listInvalidDependencies {
+    doLast {
+      configurations.each { config ->
+        if (config.canBeResolved) {
+          config.resolvedConfiguration.firstLevelModuleDependencies
+              .findAll { it.moduleGroup == null || it.moduleName == null || it.moduleVersion == null }
+              .each { println "[Config: ${config.name}] -> ${it.moduleGroup}:${it.moduleName}:${it.moduleVersion}" }
         }
+      }
     }
+  }
 
-    compileTestKotlin {
-        kotlinOptions {
-            freeCompilerArgs = ["-Xjsr305=strict"]
-            jvmTarget = "1.8"
+  task listResolvedDependencies {
+    doLast {
+      configurations.each { config ->
+        if (config.canBeResolved) {
+          config.resolvedConfiguration.firstLevelModuleDependencies
+              .each { println "[Config: ${config.name}] -> ${it.moduleGroup}:${it.moduleName}:${it.moduleVersion}" }
         }
+      }
     }
-
-    task runUnitTests(type: Test) {
-        description = 'Runs Unit Tests.'
-        group = 'verification'
-
-        filter {
-            includeTestsMatching '*UnitTest'
-        }
-    }
-
-    task runComponentTests(type: Test) {
-        description = 'Runs Component Tests.'
-        group = 'verification'
-
-        filter {
-            includeTestsMatching '*ComponentTest'
-        }
-    }
-
-    task runIntegrationTests(type: Test) {
-        description = 'Runs Integration Tests.'
-        group = 'verification'
-
-        filter {
-            includeTestsMatching '*IntegrationTest'
-        }
-    }
+  }
 
 }
 
 clean {
-    delete 'build'
+  delete 'build'
 }
 
 wrapper {
-    gradleVersion = '5.4.1'
+  gradleVersion = '5.4.1'
 }

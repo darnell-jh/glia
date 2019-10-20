@@ -1,5 +1,5 @@
 dependencies {
-    api 'org.springframework.amqp:spring-amqp'
+    compileOnly 'org.springframework.amqp:spring-amqp'
 }
 
 publishing {
@@ -11,6 +11,7 @@ publishing {
 
             from components.java
             artifact kotlinSourcesJar
+            updatePom(pom)
         }
     }
 }

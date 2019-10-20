@@ -1,7 +1,8 @@
 dependencies {
-    api 'org.springframework.data:spring-data-commons'
     api 'org.springframework:spring-tx'
-    api 'org.springframework.boot:spring-boot'
+    compileOnly 'org.springframework.data:spring-data-commons'
+    compileOnly 'org.springframework.boot:spring-boot'
+    implementation project(':glia-core')
 }
 
 publishing {
@@ -13,6 +14,7 @@ publishing {
 
             from components.java
             artifact kotlinSourcesJar
+            updatePom(pom)
         }
     }
 }

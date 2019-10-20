@@ -3,6 +3,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     api 'io.springfox:springfox-swagger2:2.9.2'
     api 'io.springfox:springfox-swagger-ui:2.9.2'
+    api 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.10'
     api project(':glia-spring-boot-data')
     api project(':glia-spring-boot-amqp')
     api project(':glia-core')
@@ -17,6 +18,7 @@ publishing {
             
             from components.java
             artifact kotlinSourcesJar
+            updatePom(pom)
         }
     }
 }

@@ -12,6 +12,7 @@ publishing {
 
             from components.java
             artifact kotlinSourcesJar
+            updatePom(pom)
         }
     }
 }

@@ -13,6 +13,8 @@ import com.dhenry.glia.data.aggregate.BaseAbstractAggregateRoot
 import com.dhenry.glia.data.models.EventState
 import com.dhenry.glia.service.EventMediator
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.context.PayloadApplicationEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
@@ -35,6 +37,10 @@ class CassandraDomainEventsService(
     private val objectMapper: ObjectMapper,
     private val eventMediator: EventMediator
 ): DataDomainEventsOperations {
+
+  companion object {
+    private val LOGGER: Logger = LoggerFactory.getLogger(CassandraDomainEventsService::class.java)
+  }
 
   /**
    * Updates the aggregate with payload
@@ -116,23 +122,40 @@ class CassandraDomainEventsService(
       fromOldest: Boolean
   ): T? {
     var aggregate: T? = null
-    getEventStream(aggregateId, fromOldest).use {
-      for (domainEvents in it) {
-        if (aggregate == null) aggregate = clazz.createInstance()
-        aggregate!!.aggregatePrimaryKey.aggregateId = domainEvents.aggregatePrimaryKey.aggregateId
-        aggregate!!.aggregatePrimaryKey.sequence = domainEvents.aggregatePrimaryKey.sequence
-
-        if (onlyActive && !domainEvents.active) return@use
-        for (event in domainEvents.events) {
-          val eventPayload = eventMediator.load(event.routingKey, event.payload)
-          invokeEventListeners(aggregate!!, eventPayload, domainEvents)
-
-          // Short-circuit if we only want the latest entry
-          if (aggregate!!.latestOnly) return aggregate
-          // Short-circuit if the aggregate is considered completely populated
-          if (aggregate!!.fullyPopulated()) return aggregate
+    getEventStream(aggregateId, fromOldest).use { it
+        .peek{ domainEvent ->
+          LOGGER.debug("Received domain pk: [aggregateId: {}, sequence: {}], events: {}",
+              domainEvent.aggregatePrimaryKey.aggregateId,
+              domainEvent.aggregatePrimaryKey.sequence,
+              domainEvent.events)
         }
-      }
+        .forEach{ domainEvent -> aggregate = processDomainEvent(clazz, domainEvent, onlyActive, aggregate) }
+    }
+
+    LOGGER.debug("Loaded aggregate with id: {}, sequence: {}",
+        aggregate?.aggregatePrimaryKey?.aggregateId, aggregate?.aggregatePrimaryKey?.sequence)
+    return aggregate
+  }
+
+  private fun <T : AbstractAggregateRoot<T, *>> processDomainEvent(
+      clazz: KClass<T>, domainEvents: DomainEvents, onlyActive: Boolean, inAggregate: T?
+  ): T? {
+    var aggregate: T? = inAggregate
+    LOGGER.debug("Processing domain events: {}", domainEvents.events)
+    if (aggregate == null) aggregate = clazz.createInstance()
+    aggregate.aggregatePrimaryKey.aggregateId = domainEvents.aggregatePrimaryKey.aggregateId
+    aggregate.aggregatePrimaryKey.sequence = aggregate.aggregatePrimaryKey.sequence
+        .coerceAtLeast(domainEvents.aggregatePrimaryKey.sequence)
+
+    if (onlyActive && !domainEvents.active) return aggregate
+    for (event in domainEvents.events) {
+      val eventPayload = eventMediator.load(event.routingKey, event.payload)
+      invokeEventListeners(aggregate, eventPayload, domainEvents)
+
+      // Short-circuit if we only want the latest entry
+      if (aggregate.latestOnly) return aggregate
+      // Short-circuit if the aggregate is considered completely populated
+      if (aggregate.fullyPopulated()) return aggregate
     }
 
     return aggregate

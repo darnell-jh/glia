@@ -8,8 +8,8 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
   // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
-  id 'org.jetbrains.kotlin.jvm' version '1.3.50'
-  id 'org.jetbrains.kotlin.plugin.spring' version '1.3.50' apply false
+  id 'org.jetbrains.kotlin.jvm' version '1.3.60'
+  id 'org.jetbrains.kotlin.plugin.spring' version '1.3.60' apply false
   id 'org.springframework.boot' version '2.2.0.RELEASE' apply false
   id 'maven-publish'
 }
@@ -97,30 +97,32 @@ subprojects {
     }
   }
 
-  task runUnitTests(type: Test) {
-    description = 'Runs Unit Tests.'
-    group = 'verification'
+  if (!name.contains('test')) {
+    task runUnitTests(type: Test) {
+      description = 'Runs Unit Tests.'
+      group = 'verification'
 
-    filter {
-      includeTestsMatching '*UnitTest'
+      filter {
+        includeTestsMatching '*UnitTest'
+      }
     }
-  }
 
-  task runComponentTests(type: Test) {
-    description = 'Runs Component Tests.'
-    group = 'verification'
+    task runComponentTests(type: Test) {
+      description = 'Runs Component Tests.'
+      group = 'verification'
 
-    filter {
-      includeTestsMatching '*ComponentTest'
+      filter {
+        includeTestsMatching '*ComponentTest'
+      }
     }
-  }
 
-  task runIntegrationTests(type: Test) {
-    description = 'Runs Integration Tests.'
-    group = 'verification'
+    task runIntegrationTests(type: Test) {
+      description = 'Runs Integration Tests.'
+      group = 'verification'
 
-    filter {
-      includeTestsMatching '*IntegrationTest'
+      filter {
+        includeTestsMatching '*IntegrationTest'
+      }
     }
   }
 

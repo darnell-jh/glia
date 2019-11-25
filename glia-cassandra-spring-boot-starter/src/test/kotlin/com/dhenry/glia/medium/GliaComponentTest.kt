@@ -44,17 +44,30 @@ class GliaComponentTest : BaseComponentTest() {
   fun multipleAggregateUpdateShouldHaveAllFieldsPopulatedAndSequenceIncremented() {
     // Arrange
     val testAggregate = TestAggregate()
+
+    // Act
     testAggregate.update("1")
     domainEventsService.save(testAggregate)
     assertThat(testAggregate.property).isEqualTo("1")
-    testAggregate.update("2")
 
-    // Act
+    testAggregate.update("2")
     domainEventsService.save(testAggregate)
     assertThat(testAggregate.property).isEqualTo("2")
 
+    testAggregate.update("3")
+    domainEventsService.save(testAggregate)
+    assertThat(testAggregate.property).isEqualTo("3")
+
+    testAggregate.update("4")
+    domainEventsService.save(testAggregate)
+    assertThat(testAggregate.property).isEqualTo("4")
+
+    testAggregate.update("5")
+    domainEventsService.save(testAggregate)
+    assertThat(testAggregate.property).isEqualTo("5")
+
     // Assert
-    assertDomainEventsAndState(2, 1L, testAggregate.aggregatePrimaryKey.aggregateId, true, 2, "routingKey", "1")
+    assertDomainEventsAndState(5, 4L, testAggregate.aggregatePrimaryKey.aggregateId, true, 5, "routingKey", "1")
   }
 
   private fun assertEvents(): ListAssert<AggregateEvent> {
@@ -102,10 +115,5 @@ class GliaComponentTest : BaseComponentTest() {
     }
     assertThat(eventIds).isEmpty()
   }
-
-  private fun generateAggregateEvent(
-      routingKey: String = "routingKey", version: String = "1",
-      event: Any
-  ) = AggregateEvent(routingKey, version, objectMapper.writeValueAsString(event))
 
 }

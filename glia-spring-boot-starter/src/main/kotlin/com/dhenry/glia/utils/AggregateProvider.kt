@@ -2,6 +2,8 @@ package com.dhenry.glia.utils
 
 import com.dhenry.glia.data.DataDomainEventsOperations
 import com.dhenry.glia.data.aggregate.AbstractAggregateRoot
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.util.*
 import kotlin.reflect.KClass
@@ -13,6 +15,10 @@ import kotlin.reflect.full.createInstance
 @Component
 class AggregateProvider constructor(val domainEventsOperations: DataDomainEventsOperations) {
 
+  companion object {
+    private val LOGGER: Logger = LoggerFactory.getLogger(AggregateProvider::class.java)
+  }
+
   final inline fun <reified T: AbstractAggregateRoot<T, *>> loadAggregate(
       aggregateId: String, onlyActive: Boolean = true
   ): Optional<T> {
@@ -22,11 +28,14 @@ class AggregateProvider constructor(val domainEventsOperations: DataDomainEvents
   final fun <T: AbstractAggregateRoot<T, *>> loadAggregate(
       aggregateId: String, clazz: KClass<T>, onlyActive: Boolean = true
   ): Optional<T> {
-    return Optional.ofNullable(domainEventsOperations.loadAggregate(
+    LOGGER.debug("Loading aggregate for $aggregateId")
+    val result = Optional.ofNullable(domainEventsOperations.loadAggregate(
         aggregateId = aggregateId,
         clazz = clazz,
         onlyActive = onlyActive
     ))
+    result.ifPresent{ LOGGER.debug("Successfully loaded aggregate. Result: {}", it) }
+    return result
   }
 
   final inline fun <reified T: AbstractAggregateRoot<T, *>> createAggregate(
@@ -44,6 +53,7 @@ class AggregateProvider constructor(val domainEventsOperations: DataDomainEvents
       initialCreator: (() -> T)? = null,
       afterCreator: ((T) -> Unit)? = null
   ): T {
+    LOGGER.debug("Creating aggregate for $aggregateId")
     val aggregate = initialCreator?.invoke() ?: clazz.createInstance()
     Optional.ofNullable(aggregateId).ifPresent { aggregate.aggregatePrimaryKey.aggregateId = it }
     afterCreator?.invoke(aggregate)

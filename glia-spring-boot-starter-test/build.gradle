@@ -1,11 +1,13 @@
 dependencies {
     api 'org.springframework.boot:spring-boot-starter-test'
+    api 'com.fasterxml.jackson.module:jackson-module-kotlin:2.10.0'
     compileOnly 'org.springframework.boot:spring-boot-starter-amqp'
     compileOnly project(':glia-spring-boot-starter')
     compileOnly project(':glia-rabbit-spring-boot-starter')
     compileOnly 'org.junit.jupiter:junit-jupiter-api'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-amqp'
+    testImplementation project(':glia-core')
     testImplementation project(':glia-rabbit-spring-boot-starter')
 }
 

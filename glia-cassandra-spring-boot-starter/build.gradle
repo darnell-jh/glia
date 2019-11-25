@@ -5,6 +5,7 @@ dependencies {
     implementation project(':glia-spring-boot-data')
     implementation project(':glia-spring-boot-starter')
     testImplementation project(':glia-spring-boot-starter-test')
+    testImplementation project(':glia-rabbit-spring-boot-starter')
 }
 
 publishing {

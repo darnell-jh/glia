@@ -143,14 +143,21 @@ class DomainEventsRepository(
 
     override fun streamById(aggregateId: String): Stream<BaseAbstractAggregateRoot<*, *>> {
         val spliterator = domainEventsAccessor.streamById(aggregateId)
-            .map { operations.converter.read(DomainEvents::class.java, it) as BaseAbstractAggregateRoot<*, *> }
+            .map {
+                LOGGER.debug("(streamById) Received the following row from aggregateId {}: {}", aggregateId, it)
+                operations.converter.read(DomainEvents::class.java, it) as BaseAbstractAggregateRoot<*, *>
+            }
             .spliterator()
         return StreamSupport.stream(spliterator, false)
     }
 
     override fun streamByIdFromOldest(aggregateId: String): Stream<BaseAbstractAggregateRoot<*, *>> {
         val spliterator = domainEventsAccessor.streamByIdFromOldest(aggregateId)
-            .map { operations.converter.read(DomainEvents::class.java, it) as BaseAbstractAggregateRoot<*, *> }
+            .map {
+                LOGGER.debug("(streamByIdFromOldest) Received the following row from aggregateId {}: {}",
+                    aggregateId, it)
+                operations.converter.read(DomainEvents::class.java, it) as BaseAbstractAggregateRoot<*, *>
+            }
             .spliterator()
         return StreamSupport.stream(spliterator, false)
     }

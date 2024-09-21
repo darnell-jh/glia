@@ -45,6 +45,8 @@ Below are some properties you can use to configure different aspects of your mic
 
 * glia.consumer.enabled: Enables your microservice as a consumer. This will avoid setting up a domainevents entity.
   * *Note:* If enable-domain-events is set to true, this will create a domainevents entity
+* glia.consumer.packages: List of packages where consumable events are found. If glia.consumer.enabled is set to true
+and no packages are specified, then all classes annotated with the `@Event` annotation are considered consumable
 * glia.cassandra.entity-base-packages: Specifies packages where entities live
 * glia.cassandra.replication.strategy: Specifies replication strategy you wish to use
 * glia.cassandra.replication.replication-factor: Specifies replication factor

@@ -80,22 +80,36 @@ class RabbitConfig(
 
     @Bean
     @ConditionalOnMissingBean
-    fun exchange(): Exchange =
-        ExchangeBuilder.topicExchange(exchangeName).durable(true).autoDelete().build()
+    fun exchange(): Exchange {
+        LOGGER.info("Declaring exchange {}", exchangeName)
+        return ExchangeBuilder.topicExchange(exchangeName).durable(true).autoDelete().build()
+    }
 
     @Bean
     @ConditionalOnProperty("glia.consumer.enabled")
-    fun queue(): Queue =
-        QueueBuilder.durable(queueName).autoDelete().build()
+    fun queue(): Queue {
+        LOGGER.info("Declaring queue {}", queueName)
+        return QueueBuilder.durable(queueName).autoDelete().build()
+    }
 
     @Bean
     @ConditionalOnProperty("glia.consumer.enabled")
-    fun bindings(queue: Queue, exchange: Exchange)
+    fun bindings(queue: Queue, exchange: Exchange, @Value("\${glia.consumer.packages:}") consumerPkgs: List<String>?)
         : Declarables {
-        return classToRoutingKey.values
-            .map { BindingBuilder.bind(queue).to(exchange).with(it).noargs() }
+        return classToRoutingKey
+            .filter { it.key.`package`.partOf(consumerPkgs ?: emptyList()) }
+            .map { BindingBuilder.bind(queue).to(exchange).with(it.value).noargs() }
             .onEach { LOGGER.info("Binding {} to {} with routing key {}", it.destination, it.exchange, it.routingKey) }
             .let { Declarables(it) }
+    }
+
+    fun Package.partOf(packages: List<String>): Boolean {
+        return packages.isEmpty() || packages.any { pkg ->
+            val pkgSplit = pkg.split(".")
+            val mySplit = this.name.split(".")
+            if (pkgSplit.size > mySplit.size) return false
+            return (pkgSplit.indices).all { pkgSplit[it] == mySplit[it] }
+        }
     }
 
     @Bean
